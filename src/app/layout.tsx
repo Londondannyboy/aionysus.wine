@@ -36,12 +36,14 @@ export default function RootLayout({
           redirectTo="/account/settings"
           emailOTP
         >
-          <header className="fixed top-4 right-4 z-50">
+          <header className="fixed top-0 left-0 right-0 h-14 bg-stone-950/90 backdrop-blur-sm border-b border-stone-800 z-[9999] flex items-center justify-end px-4">
             <UserButton size="icon" />
           </header>
-          <Providers>
-            {children}
-          </Providers>
+          <div className="pt-14">
+            <Providers>
+              {children}
+            </Providers>
+          </div>
         </NeonAuthUIProvider>
       </body>
     </html>
