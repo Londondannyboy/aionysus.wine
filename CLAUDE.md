@@ -1,4 +1,4 @@
-# ionicest.wine V3
+# aionysus.wine V3
 
 > **Cole Medin Methodology**: PRD-first, modular rules, command-ify, context reset, system evolution.
 

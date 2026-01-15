@@ -1,4 +1,4 @@
-# ionicest.wine V3 - Product Requirements Document
+# aionysus.wine V3 - Product Requirements Document
 
 > This is the **north star document**. All development decisions reference this PRD.
 
@@ -81,7 +81,7 @@ Wine discovery sites are static and boring. They lack:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    ionicest.wine V3                          │
+│                    aionysus.wine V3                          │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │   [User] ──► [Frontend/Vercel] ◄──► [Agent/Railway]         │
@@ -204,7 +204,7 @@ For each wine, generate:
 - [x] Data source → Waddesdon Wine
 - [x] AI enrichment approach → AI-generated estimates
 - [ ] Shopify store setup (new or existing?)
-- [ ] Domain: ionicest.wine or aionysus.wine?
+- [x] Domain: aionysus.wine
 - [ ] Hume EVI config: reuse existing or create new?
 
 ---

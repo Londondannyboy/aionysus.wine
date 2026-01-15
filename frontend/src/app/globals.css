@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 68, 11, 29;
+  --background-end-rgb: 122, 29, 59;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+}
+
+/* Wine-themed scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(122, 29, 59, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(227, 196, 70, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(227, 196, 70, 0.7);
+}
+
+/* CopilotKit sidebar customization */
+.copilotKitSidebar {
+  --copilot-kit-primary-color: #e3c446;
+  --copilot-kit-background-color: rgba(68, 11, 29, 0.95);
+}
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: 200ms;
+}
+
+/* MDX component styles */
+.mdx-content h1 {
+  @apply text-4xl font-serif font-bold text-gold-300 mb-6;
+}
+
+.mdx-content h2 {
+  @apply text-2xl font-serif font-semibold text-gold-400 mt-8 mb-4;
+}
+
+.mdx-content p {
+  @apply text-wine-100 leading-relaxed mb-4;
+}

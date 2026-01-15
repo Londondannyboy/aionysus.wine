@@ -1,0 +1,333 @@
+"""
+Aionysus Wine Sommelier Agent
+
+Pydantic AI agent with AG-UI protocol for CopilotKit integration.
+"""
+
+import os
+from dataclasses import dataclass
+from typing import Optional
+
+import asyncpg
+from dotenv import load_dotenv
+from pydantic import BaseModel
+from pydantic_ai import Agent, RunContext
+
+load_dotenv()
+
+# Database connection pool
+_pool: Optional[asyncpg.Pool] = None
+
+
+async def get_pool() -> asyncpg.Pool:
+    """Get or create database connection pool."""
+    global _pool
+    if _pool is None:
+        _pool = await asyncpg.create_pool(
+            os.environ["DATABASE_URL"],
+            min_size=1,
+            max_size=5,
+            command_timeout=30,
+        )
+    return _pool
+
+
+# State and Dependencies
+@dataclass
+class WineDeps:
+    """Dependencies for wine tools."""
+
+    user_id: Optional[str] = None
+    page_context: Optional[dict] = None
+
+
+class WineSearchFilters(BaseModel):
+    """Filters for wine search."""
+
+    query: Optional[str] = None
+    region: Optional[str] = None
+    wine_type: Optional[str] = None
+    grape: Optional[str] = None
+    max_price: Optional[float] = None
+    min_price: Optional[float] = None
+    body: Optional[str] = None
+
+
+class Wine(BaseModel):
+    """Wine data model."""
+
+    id: int
+    slug: str
+    name: str
+    winery: Optional[str] = None
+    vintage: Optional[int] = None
+    price_retail: float
+    region: Optional[str] = None
+    country: Optional[str] = None
+    wine_type: Optional[str] = None
+    investment_score: Optional[int] = None
+    drinking_window_start: Optional[int] = None
+    drinking_window_peak: Optional[int] = None
+    drinking_window_end: Optional[int] = None
+    estimated_critic_score: Optional[int] = None
+    body: Optional[str] = None
+    tasting_notes: Optional[str] = None
+    image_url: Optional[str] = None
+
+
+# Create the Agent
+agent = Agent(
+    "google-gla:gemini-2.0-flash",
+    deps_type=WineDeps,
+    system_prompt="""You are Aionysus, a divine AI wine sommelier.
+
+PERSONALITY:
+- Knowledgeable and passionate about wine
+- Approachable and helpful, not pretentious
+- Concise responses (2-3 sentences) unless asked for details
+
+CAPABILITIES:
+- Search wines by region, type, grape, price
+- Recommend wines for food pairings
+- Analyze investment potential and drinking windows
+- Compare wines side-by-side
+
+GUIDELINES:
+- Use wine terminology naturally but explain when needed
+- Always mention price and investment score when recommending
+- For food pairings, explain why the wine matches
+- If unsure, suggest asking for more details""",
+)
+
+
+@agent.tool
+async def search_wines(
+    ctx: RunContext[WineDeps], filters: WineSearchFilters
+) -> list[Wine]:
+    """
+    Search wines with various filters.
+
+    Args:
+        filters: Search filters including query, region, wine_type, grape, price range
+    """
+    pool = await get_pool()
+
+    conditions = ["in_stock = true"]
+    params = []
+    param_idx = 1
+
+    if filters.query:
+        conditions.append(
+            f"(name ILIKE ${param_idx} OR winery ILIKE ${param_idx})"
+        )
+        params.append(f"%{filters.query}%")
+        param_idx += 1
+
+    if filters.region:
+        conditions.append(f"region ILIKE ${param_idx}")
+        params.append(f"%{filters.region}%")
+        param_idx += 1
+
+    if filters.wine_type:
+        conditions.append(f"wine_type = ${param_idx}")
+        params.append(filters.wine_type)
+        param_idx += 1
+
+    if filters.grape:
+        conditions.append(f"grape_variety ILIKE ${param_idx}")
+        params.append(f"%{filters.grape}%")
+        param_idx += 1
+
+    if filters.max_price:
+        conditions.append(f"price_retail <= ${param_idx}")
+        params.append(filters.max_price)
+        param_idx += 1
+
+    if filters.min_price:
+        conditions.append(f"price_retail >= ${param_idx}")
+        params.append(filters.min_price)
+        param_idx += 1
+
+    if filters.body:
+        conditions.append(f"body = ${param_idx}")
+        params.append(filters.body)
+        param_idx += 1
+
+    query = f"""
+        SELECT id, slug, name, winery, vintage, price_retail, region, country,
+               wine_type, investment_score, drinking_window_start, drinking_window_peak,
+               drinking_window_end, estimated_critic_score, body, tasting_notes, image_url
+        FROM wines
+        WHERE {' AND '.join(conditions)}
+        ORDER BY investment_score DESC NULLS LAST
+        LIMIT 10
+    """
+
+    rows = await pool.fetch(query, *params)
+    return [Wine(**dict(row)) for row in rows]
+
+
+@agent.tool
+async def get_wine(ctx: RunContext[WineDeps], slug: str) -> Optional[Wine]:
+    """
+    Get detailed information about a specific wine.
+
+    Args:
+        slug: The wine's URL slug
+    """
+    pool = await get_pool()
+
+    row = await pool.fetchrow(
+        """
+        SELECT id, slug, name, winery, vintage, price_retail, region, country,
+               wine_type, investment_score, drinking_window_start, drinking_window_peak,
+               drinking_window_end, estimated_critic_score, body, tasting_notes, image_url
+        FROM wines
+        WHERE slug = $1
+        """,
+        slug,
+    )
+
+    return Wine(**dict(row)) if row else None
+
+
+@agent.tool
+async def recommend_pairing(
+    ctx: RunContext[WineDeps], food: str, max_price: Optional[float] = None
+) -> list[Wine]:
+    """
+    Recommend wines for a specific food or dish.
+
+    Args:
+        food: The food or dish to pair with
+        max_price: Optional maximum price filter
+    """
+    pool = await get_pool()
+
+    # First try to find wines with explicit pairing
+    query = """
+        SELECT w.id, w.slug, w.name, w.winery, w.vintage, w.price_retail, w.region,
+               w.country, w.wine_type, w.investment_score, w.drinking_window_start,
+               w.drinking_window_peak, w.drinking_window_end, w.estimated_critic_score,
+               w.body, w.tasting_notes, w.image_url
+        FROM wines w
+        JOIN wine_food_pairings wfp ON w.id = wfp.wine_id
+        JOIN food_pairings fp ON wfp.pairing_id = fp.id
+        WHERE fp.name ILIKE $1
+        AND w.in_stock = true
+    """
+    params = [f"%{food}%"]
+
+    if max_price:
+        query += " AND w.price_retail <= $2"
+        params.append(max_price)
+
+    query += " ORDER BY wfp.pairing_score DESC, w.investment_score DESC LIMIT 5"
+
+    rows = await pool.fetch(query, *params)
+
+    if rows:
+        return [Wine(**dict(row)) for row in rows]
+
+    # Fallback: recommend based on wine type heuristics
+    wine_type_for_food = {
+        "steak": "red",
+        "beef": "red",
+        "lamb": "red",
+        "fish": "white",
+        "seafood": "white",
+        "chicken": "white",
+        "pasta": "red",
+        "cheese": "red",
+        "dessert": "dessert",
+        "chocolate": "dessert",
+        "celebration": "sparkling",
+    }
+
+    suggested_type = None
+    for keyword, wtype in wine_type_for_food.items():
+        if keyword in food.lower():
+            suggested_type = wtype
+            break
+
+    if suggested_type:
+        return await search_wines(
+            ctx,
+            WineSearchFilters(wine_type=suggested_type, max_price=max_price),
+        )
+
+    # If no match, return top-rated wines
+    return await search_wines(ctx, WineSearchFilters(max_price=max_price))
+
+
+@agent.tool
+async def compare_wines(
+    ctx: RunContext[WineDeps], slugs: list[str]
+) -> list[Wine]:
+    """
+    Get wines for side-by-side comparison.
+
+    Args:
+        slugs: List of wine slugs to compare
+    """
+    pool = await get_pool()
+
+    placeholders = ", ".join(f"${i+1}" for i in range(len(slugs)))
+    query = f"""
+        SELECT id, slug, name, winery, vintage, price_retail, region, country,
+               wine_type, investment_score, drinking_window_start, drinking_window_peak,
+               drinking_window_end, estimated_critic_score, body, tasting_notes, image_url
+        FROM wines
+        WHERE slug IN ({placeholders})
+    """
+
+    rows = await pool.fetch(query, *slugs)
+    return [Wine(**dict(row)) for row in rows]
+
+
+# Create the AG-UI app
+from copilotkit.integrations.fastapi import add_fastapi_endpoint
+from copilotkit import CopilotKitSDK, LangGraphAgent
+from fastapi import FastAPI
+
+app = FastAPI(title="Aionysus Wine Agent")
+
+
+@app.on_event("startup")
+async def startup():
+    """Initialize database pool on startup."""
+    await get_pool()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    """Close database pool on shutdown."""
+    global _pool
+    if _pool:
+        await _pool.close()
+
+
+# Add CopilotKit endpoint
+sdk = CopilotKitSDK(
+    agents=[
+        LangGraphAgent(
+            name="wine_sommelier",
+            description="AI wine sommelier that can search wines, recommend pairings, and analyze investments",
+            agent=agent,
+        )
+    ]
+)
+
+add_fastapi_endpoint(app, sdk, "/copilotkit")
+
+
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {"status": "healthy", "agent": "aionysus"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
