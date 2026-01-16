@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
     console.log('[CLM] session_id:', body.session_id || 'NOT SET');
 
     // TEST MODE: Return immediate static response to test Hume connectivity
-    const TEST_MODE = true;
+    const TEST_MODE = false;
     if (TEST_MODE) {
       console.log('[CLM] TEST MODE - returning static response');
       return NextResponse.json({
