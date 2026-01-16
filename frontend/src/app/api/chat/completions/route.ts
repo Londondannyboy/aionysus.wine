@@ -123,35 +123,27 @@ IMPORTANT: Keep responses concise for voice - 2-3 sentences unless more detail i
 Be knowledgeable but approachable, not pretentious.
 When recommending wines, reference the user's known preferences if available.`;
 
-    // Try to call the Pydantic AI agent
+    // Try to call the Pydantic AI agent (OpenAI-compatible /chat/completions endpoint)
     try {
-      console.log('[CLM] Calling agent at:', AGENT_URL);
+      console.log('[CLM] Calling agent at:', `${AGENT_URL}/chat/completions`);
 
-      const agentResponse = await fetch(`${AGENT_URL}/copilotkit`, {
+      const agentResponse = await fetch(`${AGENT_URL}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'text/event-stream',
         },
         body: JSON.stringify({
           messages: [
-            { id: `sys_${Date.now()}`, role: 'developer', content: systemContext },
-            ...messages.map((msg, idx) => ({
-              id: `msg_${idx}_${Date.now()}`,
-              role: msg.role === 'system' ? 'developer' : msg.role,
-              content: msg.content,
-            })),
+            { role: 'system', content: systemContext },
+            ...messages,
           ],
-          runId: `run_${Date.now()}`,
-          threadId: sessionPart || `thread_${Date.now()}`,
-          state: {
-            user: userId ? { id: userId, name: firstName } : null,
-          },
         }),
       });
 
+      console.log('[CLM] Agent response status:', agentResponse.status);
+
       if (agentResponse.ok) {
-        // Parse SSE stream from agent
+        // Parse SSE stream from agent (OpenAI streaming format)
         const reader = agentResponse.body?.getReader();
         if (reader) {
           const decoder = new TextDecoder();
@@ -168,14 +160,13 @@ When recommending wines, reference the user's known preferences if available.`;
 
             for (const line of lines) {
               if (line.startsWith('data: ')) {
+                const dataStr = line.slice(6).trim();
+                if (dataStr === '[DONE]') continue;
                 try {
-                  const data = JSON.parse(line.slice(6));
-                  if (data.type === 'TEXT_MESSAGE_CONTENT' || data.type === 'TextMessageContent') {
-                    content += data.content || data.delta || '';
-                  } else if (data.delta?.content) {
-                    content += data.delta.content;
-                  } else if (data.content && typeof data.content === 'string') {
-                    content += data.content;
+                  const data = JSON.parse(dataStr);
+                  // OpenAI streaming format: choices[0].delta.content
+                  if (data.choices?.[0]?.delta?.content) {
+                    content += data.choices[0].delta.content;
                   }
                 } catch {
                   // Skip non-JSON lines
@@ -200,6 +191,8 @@ When recommending wines, reference the user's known preferences if available.`;
             });
           }
         }
+      } else {
+        console.warn('[CLM] Agent returned non-OK status:', agentResponse.status);
       }
     } catch (agentError) {
       console.warn('[CLM] Agent call failed, using fallback:', agentError);
