@@ -3,10 +3,11 @@
 import { authClient, UserButton } from '@/lib/auth/client';
 import { VoiceWidget } from './VoiceInput';
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 export function HeaderClient() {
   const { useSession } = authClient;
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const user = session?.user;
   const userContext = user ? {
@@ -14,6 +15,11 @@ export function HeaderClient() {
     name: user.name || user.email?.split('@')[0],
     email: user.email,
   } : undefined;
+
+  // Debug: log session state
+  useEffect(() => {
+    console.log('[Header] Session state:', { isPending, hasUser: !!user, userName: user?.name, userId: user?.id });
+  }, [isPending, user]);
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-wine-950/95 backdrop-blur-sm z-[9999] flex items-center justify-between px-6 border-b border-wine-800">
