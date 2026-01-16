@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Pydantic AI agent for Aionysus wine sommelier"
 requires-python = ">=3.11"
 dependencies = [
-    "pydantic-ai[google]>=0.0.20",
+    "pydantic-ai[groq]>=0.0.20",
     "copilotkit>=0.1.30",
     "asyncpg>=0.30.0",
     "uvicorn>=0.32.0",

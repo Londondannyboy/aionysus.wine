@@ -77,7 +77,7 @@ class Wine(BaseModel):
 
 # Create the Agent
 agent = Agent(
-    "google-gla:gemini-2.0-flash",
+    "groq:llama-3.3-70b-versatile",
     deps_type=WineDeps,
     system_prompt="""You are Aionysus, a divine AI wine sommelier.
 
