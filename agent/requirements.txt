@@ -1,0 +1,6 @@
+pydantic-ai[groq]>=0.0.20
+copilotkit>=0.1.30
+asyncpg>=0.30.0
+uvicorn>=0.32.0
+python-dotenv>=1.0.0
+fastapi>=0.115.0
