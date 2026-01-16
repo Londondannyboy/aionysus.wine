@@ -97,6 +97,26 @@ export async function POST(req: NextRequest) {
     console.log('[CLM] custom_session_id:', body.custom_session_id || 'NOT SET');
     console.log('[CLM] session_id:', body.session_id || 'NOT SET');
 
+    // TEST MODE: Return immediate static response to test Hume connectivity
+    const TEST_MODE = true;
+    if (TEST_MODE) {
+      console.log('[CLM] TEST MODE - returning static response');
+      return NextResponse.json({
+        id: `chatcmpl-${Date.now()}`,
+        object: 'chat.completion',
+        created: Math.floor(Date.now() / 1000),
+        model: 'test-mode',
+        choices: [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: 'Hello! I am Aionysus, your wine sommelier. This is a test response. How can I help you with wine today?',
+          },
+          finish_reason: 'stop',
+        }],
+      });
+    }
+
     const messages: OpenAIMessage[] = body.messages || [];
 
     // Extract metadata from Hume (custom session ID format: "firstName|aionysus_userId")
