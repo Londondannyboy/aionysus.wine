@@ -169,3 +169,27 @@ CREATE TRIGGER wines_region_stats_trigger
 AFTER INSERT OR UPDATE OR DELETE ON wines
 FOR EACH STATEMENT
 EXECUTE FUNCTION update_region_wine_count();
+
+-- Sample wine data for testing
+INSERT INTO wines (slug, name, winery, vintage, price_retail, region, country, wine_type, grape_variety, investment_score, price_trend, drinking_window_start, drinking_window_peak, drinking_window_end, estimated_critic_score, body, tannins, acidity, sweetness, aromas, flavors, tasting_notes, in_stock) VALUES
+('chateau-margaux-2015', 'Chateau Margaux 2015', 'Chateau Margaux', 2015, 650.00, 'Bordeaux', 'France', 'red', 'Cabernet Sauvignon', 95, 'rising', 2025, 2035, 2055, 98, 'full', 'high', 'medium', 'dry', ARRAY['blackcurrant', 'violet', 'cedar', 'graphite'], ARRAY['cassis', 'dark chocolate', 'tobacco', 'minerals'], 'An exceptional vintage showing remarkable elegance and power. Deep purple with complex aromas of blackcurrant and violet, leading to a palate of extraordinary depth and finesse.', true),
+
+('opus-one-2019', 'Opus One 2019', 'Opus One Winery', 2019, 450.00, 'Napa Valley', 'USA', 'red', 'Cabernet Sauvignon', 88, 'stable', 2024, 2030, 2045, 96, 'full', 'medium', 'medium', 'dry', ARRAY['blackberry', 'cassis', 'vanilla', 'mocha'], ARRAY['dark fruit', 'espresso', 'sweet spice', 'graphite'], 'A harmonious blend showcasing the best of Napa Valley. Rich and opulent with layers of dark fruit, perfectly integrated oak, and a long, silky finish.', true),
+
+('dom-perignon-2012', 'Dom Perignon 2012', 'Moet & Chandon', 2012, 220.00, 'Champagne', 'France', 'sparkling', 'Chardonnay/Pinot Noir', 82, 'rising', 2022, 2027, 2040, 95, 'medium', 'low', 'high', 'dry', ARRAY['brioche', 'citrus', 'white flowers', 'almond'], ARRAY['lemon', 'toast', 'honey', 'minerality'], 'A luminous champagne with exceptional balance. Fine, persistent bubbles carry notes of citrus and brioche to an incredibly long, refined finish.', true),
+
+('penfolds-grange-2018', 'Penfolds Grange 2018', 'Penfolds', 2018, 850.00, 'Barossa Valley', 'Australia', 'red', 'Shiraz', 90, 'rising', 2028, 2040, 2060, 97, 'full', 'high', 'medium', 'dry', ARRAY['blackberry', 'dark chocolate', 'licorice', 'vanilla'], ARRAY['plum', 'spice', 'mocha', 'earth'], 'Australia iconic wine at its finest. Intensely concentrated with waves of dark fruit, chocolate, and spice building to a powerful yet elegant finish.', true),
+
+('cloudy-bay-sauvignon-blanc-2023', 'Cloudy Bay Sauvignon Blanc 2023', 'Cloudy Bay', 2023, 28.00, 'Marlborough', 'New Zealand', 'white', 'Sauvignon Blanc', 45, 'stable', 2024, 2025, 2027, 90, 'light', 'low', 'high', 'dry', ARRAY['grapefruit', 'passionfruit', 'fresh herbs', 'lime'], ARRAY['citrus', 'gooseberry', 'mineral', 'green apple'], 'Crisp and vibrant with explosive aromatics. Classic Marlborough style with zesty citrus, tropical notes, and a refreshingly clean finish.', true),
+
+('barolo-monfortino-2015', 'Barolo Monfortino Riserva 2015', 'Giacomo Conterno', 2015, 750.00, 'Piedmont', 'Italy', 'red', 'Nebbiolo', 94, 'rising', 2030, 2045, 2070, 99, 'full', 'high', 'high', 'dry', ARRAY['rose', 'tar', 'truffle', 'cherry'], ARRAY['dried cherry', 'licorice', 'leather', 'spice'], 'A monumental Barolo that defines the pinnacle of Nebbiolo. Ethereal aromatics of rose and tar give way to incredible depth and a finish that lasts for minutes.', true),
+
+('veuve-clicquot-rose', 'Veuve Clicquot Rose NV', 'Veuve Clicquot', NULL, 65.00, 'Champagne', 'France', 'sparkling', 'Pinot Noir/Chardonnay', 55, 'stable', 2024, 2025, 2028, 89, 'medium', 'low', 'high', 'dry', ARRAY['strawberry', 'raspberry', 'brioche', 'citrus'], ARRAY['red berries', 'toast', 'cream', 'minerals'], 'An elegant rose champagne with beautiful salmon color. Fresh red fruit aromas lead to a palate of finesse and vivacity with a crisp, clean finish.', true),
+
+('tignanello-2020', 'Tignanello 2020', 'Antinori', 2020, 145.00, 'Tuscany', 'Italy', 'red', 'Sangiovese', 78, 'stable', 2025, 2032, 2045, 94, 'full', 'medium', 'high', 'dry', ARRAY['cherry', 'plum', 'tobacco', 'leather'], ARRAY['red fruit', 'spice', 'oak', 'earth'], 'The original Super Tuscan continues to impress. Bright cherry fruit, elegant tannins, and characteristic Tuscan earthiness combine in perfect harmony.', true),
+
+('whispering-angel-rose-2023', 'Whispering Angel Rose 2023', 'Chateau dEsclans', 2023, 22.00, 'Provence', 'France', 'rose', 'Grenache/Rolle', 35, 'stable', 2024, 2024, 2025, 88, 'light', 'low', 'medium', 'dry', ARRAY['strawberry', 'peach', 'citrus', 'herbs'], ARRAY['red fruit', 'melon', 'mineral', 'fresh herbs'], 'The benchmark for Provence rose. Pale pink with delicate aromas of summer fruits and a refreshingly dry, elegant palate perfect for warm days.', true),
+
+('chateau-dyquem-2017', 'Chateau dYquem 2017', 'Chateau dYquem', 2017, 380.00, 'Bordeaux', 'France', 'dessert', 'Semillon/Sauvignon Blanc', 92, 'rising', 2025, 2040, 2080, 97, 'full', 'low', 'high', 'sweet', ARRAY['apricot', 'honey', 'saffron', 'orange peel'], ARRAY['tropical fruit', 'caramel', 'spice', 'botrytis'], 'The worlds greatest dessert wine. Luscious golden nectar with incredible complexity - layers of honey, apricot, and spice unfold endlessly on the palate.', true)
+
+ON CONFLICT (slug) DO NOTHING;

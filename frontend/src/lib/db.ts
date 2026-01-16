@@ -68,46 +68,57 @@ export async function getWines(filters?: {
   limit?: number;
   offset?: number;
 }): Promise<Wine[]> {
-  const conditions: string[] = ['is_active = true'];
-  const params: unknown[] = [];
-  let paramIndex = 1;
-
-  if (filters?.region) {
-    conditions.push(`region ILIKE $${paramIndex}`);
-    params.push(`%${filters.region}%`);
-    paramIndex++;
-  }
-
-  if (filters?.wine_type) {
-    conditions.push(`wine_type = $${paramIndex}`);
-    params.push(filters.wine_type);
-    paramIndex++;
-  }
-
-  if (filters?.max_price) {
-    conditions.push(`price_retail <= $${paramIndex}`);
-    params.push(filters.max_price);
-    paramIndex++;
-  }
-
-  if (filters?.min_price) {
-    conditions.push(`price_retail >= $${paramIndex}`);
-    params.push(filters.min_price);
-    paramIndex++;
-  }
-
   const limit = filters?.limit || 50;
   const offset = filters?.offset || 0;
 
-  const query = `
-    SELECT * FROM wines
-    WHERE ${conditions.join(' AND ')}
-    ORDER BY investment_score DESC NULLS LAST, price_retail DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
+  // Use tagged template for Neon serverless driver
+  // For simplicity, fetch all wines and filter in memory (fine for ~500 wines)
+  let result;
 
-  const result = await sql(query, params);
-  return result as Wine[];
+  if (filters?.region && filters?.wine_type) {
+    result = await sql`
+      SELECT * FROM wines
+      WHERE in_stock = true
+        AND region ILIKE ${'%' + filters.region + '%'}
+        AND wine_type = ${filters.wine_type}
+      ORDER BY investment_score DESC NULLS LAST, price_retail DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+  } else if (filters?.region) {
+    result = await sql`
+      SELECT * FROM wines
+      WHERE in_stock = true
+        AND region ILIKE ${'%' + filters.region + '%'}
+      ORDER BY investment_score DESC NULLS LAST, price_retail DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+  } else if (filters?.wine_type) {
+    result = await sql`
+      SELECT * FROM wines
+      WHERE in_stock = true
+        AND wine_type = ${filters.wine_type}
+      ORDER BY investment_score DESC NULLS LAST, price_retail DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+  } else {
+    result = await sql`
+      SELECT * FROM wines
+      WHERE in_stock = true
+      ORDER BY investment_score DESC NULLS LAST, price_retail DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+  }
+
+  // Apply price filters in memory if needed
+  let wines = result as Wine[];
+  if (filters?.max_price) {
+    wines = wines.filter(w => w.price_retail <= filters.max_price!);
+  }
+  if (filters?.min_price) {
+    wines = wines.filter(w => w.price_retail >= filters.min_price!);
+  }
+
+  return wines;
 }
 
 export async function getWineBySlug(slug: string): Promise<Wine | null> {
