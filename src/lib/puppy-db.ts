@@ -1,6 +1,23 @@
 import { neon } from '@neondatabase/serverless';
 
-export const sql = neon(process.env.DATABASE_URL!);
+// Lazy database connection - only created when needed at runtime
+// This prevents the connection from being created during Next.js build
+function createSqlClient() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  return neon(databaseUrl);
+}
+
+// Get sql client lazily
+let _sqlClient: ReturnType<typeof neon> | null = null;
+export function getSql() {
+  if (!_sqlClient) {
+    _sqlClient = createSqlClient();
+  }
+  return _sqlClient;
+}
 
 // ============================================
 // PUPPY INSURANCE TYPE DEFINITIONS
@@ -211,7 +228,7 @@ export const INSURANCE_PLANS: InsurancePlan[] = [
 // Get all dog breeds
 export async function getAllBreeds(): Promise<DogBreed[]> {
   try {
-    const result = await sql`
+    const result = await getSql()`
       SELECT * FROM dog_breeds ORDER BY name
     `;
     return result as DogBreed[];
@@ -224,7 +241,7 @@ export async function getAllBreeds(): Promise<DogBreed[]> {
 // Get breed by name (fuzzy match)
 export async function getBreedByName(name: string): Promise<DogBreed | null> {
   try {
-    const result = await sql`
+    const result = await getSql()`
       SELECT * FROM dog_breeds
       WHERE LOWER(name) = LOWER(${name})
       OR LOWER(name) LIKE LOWER(${'%' + name + '%'})
@@ -242,7 +259,7 @@ export async function getBreedByName(name: string): Promise<DogBreed | null> {
 // Search breeds
 export async function searchBreeds(query: string): Promise<DogBreed[]> {
   try {
-    const result = await sql`
+    const result = await getSql()`
       SELECT * FROM dog_breeds
       WHERE LOWER(name) LIKE LOWER(${'%' + query + '%'})
       ORDER BY name
@@ -258,7 +275,7 @@ export async function searchBreeds(query: string): Promise<DogBreed[]> {
 // Get breed by ID
 export async function getBreedById(id: number): Promise<DogBreed | null> {
   try {
-    const result = await sql`
+    const result = await getSql()`
       SELECT * FROM dog_breeds WHERE id = ${id}
     `;
     return result[0] as DogBreed || null;
@@ -307,7 +324,7 @@ export async function saveQuote(
   quote: Omit<PolicyQuote, 'id'>
 ): Promise<number | null> {
   try {
-    const result = await sql`
+    const result = await getSql()`
       INSERT INTO policy_quotes (user_id, session_id, dog_details, plan_type, quoted_premium, coverage_details, valid_until)
       VALUES (${quote.user_id || null}, ${quote.session_id || null}, ${JSON.stringify(quote.dog_details)}, ${quote.plan_type}, ${quote.quoted_premium}, ${JSON.stringify(quote.coverage_details)}, ${quote.valid_until.toISOString()})
       RETURNING id
@@ -322,7 +339,7 @@ export async function saveQuote(
 // Get user's dogs
 export async function getUserDogs(userId: string): Promise<UserDog[]> {
   try {
-    const result = await sql`
+    const result = await getSql()`
       SELECT * FROM user_dogs WHERE user_id = ${userId} ORDER BY created_at DESC
     `;
     return result as UserDog[];
@@ -335,7 +352,7 @@ export async function getUserDogs(userId: string): Promise<UserDog[]> {
 // Add a dog for user
 export async function addUserDog(dog: Omit<UserDog, 'id'>): Promise<number | null> {
   try {
-    const result = await sql`
+    const result = await getSql()`
       INSERT INTO user_dogs (user_id, name, breed_id, breed_name, date_of_birth, age_years, weight_kg, gender, is_neutered, microchip_number, has_preexisting_conditions, preexisting_conditions, photo_url)
       VALUES (${dog.user_id}, ${dog.name}, ${dog.breed_id || null}, ${dog.breed_name}, ${dog.date_of_birth?.toISOString() || null}, ${dog.age_years}, ${dog.weight_kg || null}, ${dog.gender || null}, ${dog.is_neutered}, ${dog.microchip_number || null}, ${dog.has_preexisting_conditions}, ${dog.preexisting_conditions || []}, ${dog.photo_url || null})
       RETURNING id
@@ -350,7 +367,7 @@ export async function addUserDog(dog: Omit<UserDog, 'id'>): Promise<number | nul
 // Get user's policies
 export async function getUserPolicies(userId: string): Promise<InsurancePolicy[]> {
   try {
-    const result = await sql`
+    const result = await getSql()`
       SELECT p.*, d.name as dog_name, d.breed_name
       FROM insurance_policies p
       LEFT JOIN user_dogs d ON p.dog_id = d.id
@@ -380,13 +397,13 @@ export async function createPolicy(
     const endDate = new Date();
     endDate.setFullYear(endDate.getFullYear() + 1);
 
-    await sql`
+    await getSql()`
       INSERT INTO insurance_policies (policy_number, user_id, dog_id, plan_type, monthly_premium, annual_coverage_limit, deductible, coverage_details, start_date, end_date, status)
       VALUES (${policyNumber}, ${userId}, ${dogId}, ${planType}, ${plan.base_monthly_premium}, ${plan.annual_coverage_limit}, ${plan.deductible}, ${JSON.stringify(plan.coverage)}, ${startDate.toISOString()}, ${endDate.toISOString()}, 'active')
     `;
 
     // Mark quote as converted
-    await sql`
+    await getSql()`
       UPDATE policy_quotes SET converted_to_policy_id = (SELECT id FROM insurance_policies WHERE policy_number = ${policyNumber})
       WHERE id = ${quoteId}
     `;
