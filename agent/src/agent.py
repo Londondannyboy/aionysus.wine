@@ -324,7 +324,102 @@ add_fastapi_endpoint(app, sdk, "/copilotkit")
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "healthy", "agent": "aionysus"}
+    return {"status": "healthy", "agent": "DIONYSUS"}
+
+
+# === CLM ENDPOINT FOR HUME VOICE ===
+from fastapi import Request
+from fastapi.responses import StreamingResponse
+import json
+import asyncio
+
+
+@app.post("/chat/completions")
+async def chat_completions(request: Request):
+    """
+    OpenAI-compatible chat completions endpoint for Hume CLM.
+    Streams responses in SSE format.
+    """
+    body = await request.json()
+    messages = body.get("messages", [])
+
+    # Extract user message
+    user_messages = [m for m in messages if m.get("role") == "user"]
+    last_user_msg = user_messages[-1]["content"] if user_messages else "Hello"
+
+    # Extract system context if provided
+    system_messages = [m for m in messages if m.get("role") == "system"]
+    system_context = system_messages[0]["content"] if system_messages else ""
+
+    # Build prompt for the agent
+    full_prompt = f"{system_context}\n\nUser: {last_user_msg}" if system_context else last_user_msg
+
+    async def generate_stream():
+        """Stream the response in OpenAI format."""
+        msg_id = f"chatcmpl-{hash(last_user_msg) % 100000000:08x}"
+
+        try:
+            # Run the agent
+            result = await agent.run(full_prompt)
+            response_text = str(result.data) if result.data else "I'd be happy to help you with wine recommendations."
+
+            # Stream word by word
+            words = response_text.split()
+            for i, word in enumerate(words):
+                chunk = {
+                    "id": msg_id,
+                    "object": "chat.completion.chunk",
+                    "created": int(asyncio.get_event_loop().time()),
+                    "model": "dionysus-1",
+                    "choices": [{
+                        "index": 0,
+                        "delta": {"content": word + (" " if i < len(words) - 1 else "")},
+                        "finish_reason": None
+                    }]
+                }
+                yield f"data: {json.dumps(chunk)}\n\n"
+                await asyncio.sleep(0.02)  # Small delay for natural streaming
+
+            # Send finish
+            finish_chunk = {
+                "id": msg_id,
+                "object": "chat.completion.chunk",
+                "created": int(asyncio.get_event_loop().time()),
+                "model": "dionysus-1",
+                "choices": [{
+                    "index": 0,
+                    "delta": {},
+                    "finish_reason": "stop"
+                }]
+            }
+            yield f"data: {json.dumps(finish_chunk)}\n\n"
+            yield "data: [DONE]\n\n"
+
+        except Exception as e:
+            # Error fallback
+            error_response = f"I apologize, I encountered an issue: {str(e)[:100]}"
+            chunk = {
+                "id": msg_id,
+                "object": "chat.completion.chunk",
+                "created": int(asyncio.get_event_loop().time()),
+                "model": "dionysus-1",
+                "choices": [{
+                    "index": 0,
+                    "delta": {"content": error_response},
+                    "finish_reason": "stop"
+                }]
+            }
+            yield f"data: {json.dumps(chunk)}\n\n"
+            yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
 
 
 if __name__ == "__main__":
