@@ -421,8 +421,16 @@ async def chat_completions(request: Request):
         # Run agent
         deps = BuddyDeps(session_id=session_id)
         result = await buddy_agent.run(user_message, deps=deps)
-        # Pydantic AI returns result.data as the actual output string
+
+        # Extract actual text from Pydantic AI result
         response_text = result.data
+
+        # Strip AgentRunResult wrapper if present (Pydantic AI sometimes wraps output)
+        if isinstance(response_text, str) and response_text.startswith('AgentRunResult(output='):
+            import re
+            match = re.search(r'AgentRunResult\(output=["\'](.+?)["\']\)$', response_text, re.DOTALL)
+            if match:
+                response_text = match.group(1).replace('\\n', '\n').replace('\\"', '"')
 
         if stream:
             async def stream_response() -> AsyncGenerator[str, None]:
@@ -515,8 +523,16 @@ async def copilotkit_endpoint(request: Request):
         session_id = str(uuid.uuid4())
         deps = BuddyDeps(session_id=session_id)
         result = await buddy_agent.run(user_message, deps=deps)
-        # Pydantic AI returns result.data as the actual output string
+
+        # Extract actual text from Pydantic AI result
         response_text = result.data
+
+        # Strip AgentRunResult wrapper if present
+        if isinstance(response_text, str) and response_text.startswith('AgentRunResult(output='):
+            import re
+            match = re.search(r'AgentRunResult\(output=["\'](.+?)["\']\)$', response_text, re.DOTALL)
+            if match:
+                response_text = match.group(1).replace('\\n', '\n').replace('\\"', '"')
 
         return {
             "messages": [{
