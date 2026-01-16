@@ -2,19 +2,16 @@ import { neon } from '@neondatabase/serverless';
 
 // Lazy database connection - only created when needed at runtime
 // This prevents the connection from being created during Next.js build
-function createSqlClient() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is not set');
-  }
-  return neon(databaseUrl);
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _sqlClient: any = null;
 
-// Get sql client lazily
-let _sqlClient: ReturnType<typeof neon> | null = null;
 export function getSql() {
   if (!_sqlClient) {
-    _sqlClient = createSqlClient();
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+    _sqlClient = neon(databaseUrl);
   }
   return _sqlClient;
 }
