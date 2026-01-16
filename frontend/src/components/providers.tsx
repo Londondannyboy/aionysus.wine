@@ -4,11 +4,12 @@ import { CopilotKit } from '@copilotkit/react-core';
 import { CopilotSidebar } from '@copilotkit/react-ui';
 import '@copilotkit/react-ui/styles.css';
 
-const AGENT_URL = process.env.NEXT_PUBLIC_COPILOTKIT_RUNTIME_URL || 'http://localhost:8000';
+// Use local Next.js runtime (Google AI adapter) - no external Railway dependency
+const RUNTIME_URL = '/api/copilotkit';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <CopilotKit runtimeUrl={AGENT_URL}>
+    <CopilotKit runtimeUrl={RUNTIME_URL}>
       <CopilotSidebar
         labels={{
           title: 'Aionysus Sommelier',
