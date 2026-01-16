@@ -85,6 +85,12 @@ async function getUserProfile(userId: string): Promise<string> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Log full request from Hume for debugging
+    console.log('[CLM] === INCOMING REQUEST ===');
+    console.log('[CLM] Body keys:', Object.keys(body));
+    console.log('[CLM] Full body:', JSON.stringify(body).slice(0, 500));
+
     const messages: OpenAIMessage[] = body.messages || [];
 
     // Extract metadata from Hume (custom session ID format: "firstName|aionysus_userId")
@@ -261,7 +267,10 @@ When recommending wines, reference the user's known preferences if available.`;
     });
 
   } catch (error: unknown) {
-    console.error('[CLM] Error:', error instanceof Error ? error.message : error);
+    console.error('[CLM] === ERROR ===');
+    console.error('[CLM] Error type:', typeof error);
+    console.error('[CLM] Error message:', error instanceof Error ? error.message : String(error));
+    console.error('[CLM] Error stack:', error instanceof Error ? error.stack : 'no stack');
 
     return NextResponse.json({
       id: `chatcmpl-${Date.now()}`,
