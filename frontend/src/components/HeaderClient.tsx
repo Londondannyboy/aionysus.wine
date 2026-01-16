@@ -1,7 +1,7 @@
 'use client';
 
-import { authClient, UserButton, SignedIn, SignedOut } from '@/lib/auth/client';
-import { VoiceInput } from './VoiceInput';
+import { authClient, UserButton } from '@/lib/auth/client';
+import { VoiceWidget } from './VoiceInput';
 import Link from 'next/link';
 
 export function HeaderClient() {
@@ -9,8 +9,11 @@ export function HeaderClient() {
   const { data: session } = useSession();
 
   const user = session?.user;
-  const firstName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || null;
-  const userId = user?.id || null;
+  const userContext = user ? {
+    id: user.id,
+    name: user.name || user.email?.split('@')[0],
+    email: user.email,
+  } : undefined;
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-wine-950/95 backdrop-blur-sm z-[9999] flex items-center justify-between px-6 border-b border-wine-800">
@@ -22,12 +25,7 @@ export function HeaderClient() {
         <Link href="/wines" className="text-wine-200 hover:text-gold-300 text-sm font-medium transition-colors">
           Wines
         </Link>
-        <SignedIn>
-          <VoiceInput firstName={firstName} userId={userId} />
-        </SignedIn>
-        <SignedOut>
-          <VoiceInput firstName={null} userId={null} />
-        </SignedOut>
+        <VoiceWidget variant="inline" size="md" user={userContext} />
         <UserButton size="icon" />
       </nav>
     </header>
