@@ -169,7 +169,7 @@ export function HumeWidget() {
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Get real auth from Neon Auth (using authClient.useSession like fractional.quest)
+  // Get auth session from Neon Auth
   const { data: session, isPending: authPending } = authClient.useSession()
   const user = session?.user
   const isAuthenticated = !!user
