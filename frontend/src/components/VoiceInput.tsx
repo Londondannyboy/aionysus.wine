@@ -65,25 +65,82 @@ function VoiceButtonInner({
 
     setIsPending(true);
 
-    // Fetch Zep context if user is logged in
+    // Fetch BOTH user profile (Neon) and Zep context
+    let userProfile: { regions?: string[]; grapes?: string[]; budget?: string; occasions?: string[] } = {};
     let zepContext = '';
+
     if (user?.id) {
+      // 1. Fetch user profile from Neon
+      debug('Profile', `Fetching profile for userId: ${user.id}`);
+      try {
+        const profileRes = await fetch(`/api/user-profile?userId=${user.id}`);
+        const profileData = await profileRes.json();
+        if (profileData.items?.length > 0) {
+          // Group profile items by type
+          const regions: string[] = [];
+          const grapes: string[] = [];
+          const occasions: string[] = [];
+          let budget = '';
+
+          for (const item of profileData.items) {
+            if (item.item_type === 'favorite_region') regions.push(item.value);
+            if (item.item_type === 'favorite_grape') grapes.push(item.value);
+            if (item.item_type === 'occasion') occasions.push(item.value);
+            if (item.item_type === 'budget') budget = item.value;
+          }
+
+          userProfile = { regions, grapes, budget, occasions };
+          debug('Profile', `Got profile:`, userProfile);
+        }
+      } catch (e) {
+        debug('Profile', 'Failed to fetch profile', e);
+      }
+
+      // 2. Fetch Zep context (AI-extracted facts)
       debug('Zep', `Fetching context for userId: ${user.id}`);
       try {
         const zepRes = await fetch(`/api/zep-context?userId=${user.id}`);
         const zepData = await zepRes.json();
         if (zepData.context) {
-          zepContext = `\n\nWINE PREFERENCES I REMEMBER:\n${zepData.context}`;
-          debug('Zep', `Got context: ${zepData.context.substring(0, 100)}...`);
+          zepContext = zepData.context;
+          debug('Zep', `Got Zep context: ${zepContext.substring(0, 100)}...`);
         }
       } catch (e) {
         debug('Zep', 'Failed to fetch context', e);
       }
     }
 
+    // Build comprehensive user context section
     const userName = user?.name || 'Guest';
+    let userContextSection = '';
+
+    if (user?.id) {
+      userContextSection = `\n\n## USER CONTEXT - ${userName.toUpperCase()}
+User ID: ${user.id}
+Email: ${user.email || 'Not provided'}`;
+
+      // Add Neon profile data
+      if (userProfile.regions?.length) {
+        userContextSection += `\nFavorite Regions: ${userProfile.regions.join(', ')}`;
+      }
+      if (userProfile.grapes?.length) {
+        userContextSection += `\nFavorite Grapes: ${userProfile.grapes.join(', ')}`;
+      }
+      if (userProfile.budget) {
+        userContextSection += `\nBudget: ${userProfile.budget}`;
+      }
+      if (userProfile.occasions?.length) {
+        userContextSection += `\nUsual Occasions: ${userProfile.occasions.join(', ')}`;
+      }
+
+      // Add Zep context (AI-extracted memories)
+      if (zepContext) {
+        userContextSection += `\n\nAI Memory (from past conversations):\n${zepContext}`;
+      }
+    }
+
     const greeting = user?.name
-      ? `The user's name is ${user.name}. Greet them warmly by name as their personal sommelier.`
+      ? `The user's name is ${user.name}. Greet them warmly by name: "Hello ${user.name}!" as their personal sommelier.`
       : 'This is a guest. Give them a warm welcome as a wine sommelier.';
 
     const systemPrompt = `You are Aionysus, a divine AI wine sommelier.
@@ -92,15 +149,19 @@ Your role is to help wine lovers:
 2. Understand investment potential and drinking windows
 3. Find perfect food pairings
 4. Learn about wine regions and producers
+${userContextSection}
 
-${greeting}${zepContext}
+## GREETING INSTRUCTIONS
+${greeting}
 
-IMPORTANT RULES:
+## BEHAVIOR RULES
 - Keep responses SHORT for voice - 2-3 sentences max
 - Be knowledgeable but approachable, not pretentious
 - Use wine terminology naturally but explain when needed
-- Reference their preferences when making recommendations
-- Ask clarifying questions to narrow down suggestions`;
+- ALWAYS reference user's known preferences when making recommendations
+- If you know their favorite regions/grapes, mention wines from those areas
+- Ask clarifying questions to learn more about their tastes
+- When they express preferences, remember and use them`;
 
     const sessionId = user?.id
       ? `aionysus_${user.id}`
