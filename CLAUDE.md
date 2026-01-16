@@ -17,7 +17,15 @@ cd scripts && npx tsx scrape-waddesdon.ts
 
 ## Architecture
 
-AI wine discovery platform with MDX investment dashboards. Three-service pattern: Frontend (Vercel) + Agent (Railway) + Database (Neon). Voice via Hume EVI, commerce via Shopify.
+AI wine discovery platform with MDX investment dashboards.
+
+**Pattern**: CopilotKit runtime inside Next.js API route (like relocation.quest), not separate Railway backend for chat. Railway agent used for Hume voice CLM endpoint only.
+
+| Component | URL |
+|-----------|-----|
+| Frontend | https://aionysus.wine (Vercel) |
+| Agent | https://aionysus-agent-production.up.railway.app (Railway) |
+| Database | Neon PostgreSQL |
 
 → See `.claude/reference/architecture.md` for details
 
@@ -27,7 +35,9 @@ AI wine discovery platform with MDX investment dashboards. Three-service pattern
 
 | Purpose | Location |
 |---------|----------|
-| CopilotKit setup | `frontend/src/components/providers.tsx` |
+| CopilotKit provider | `frontend/src/components/providers.tsx` |
+| CopilotKit runtime | `frontend/src/app/api/copilotkit/route.ts` |
+| Hume token API | `frontend/src/app/api/hume-token/route.ts` |
 | MDX components | `frontend/src/components/mdx/` |
 | Wine page template | `frontend/src/app/wines/[slug]/page.tsx` |
 | Region pages | `frontend/src/app/wines/region/[region]/page.tsx` |
@@ -139,6 +149,18 @@ Phase 1: Foundation
 ---
 
 ## Session Log
+
+### 2026-01-16 (Session 2) - Deployment & Integration
+- Deployed frontend to Vercel (frontend project)
+- Configured aionysus.wine domain alias
+- Updated Hume credentials (config: `6ac2d1ec-2e0f-4957-959a-b4bbb5405d40`)
+- **Fixed white screen issue**: Changed CopilotKit from Railway URL to local `/api/copilotkit`
+- Created `/api/copilotkit` route with GoogleGenerativeAIAdapter (relocation.quest pattern)
+- Created `/api/hume-token` route for voice auth
+- Railway agent running at https://aionysus-agent-production.up.railway.app
+- Added GOOGLE_API_KEY to Vercel env vars
+
+**Key Lesson**: Don't point CopilotKit to external Railway URL - use local Next.js API route with Google AI adapter. Railway agent is for Hume CLM endpoint only.
 
 ### 2025-01-15 (Session 1)
 - Created project from CLAUDE_STARTER_KIT
