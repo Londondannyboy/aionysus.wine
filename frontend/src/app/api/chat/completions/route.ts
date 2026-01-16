@@ -83,13 +83,19 @@ async function getUserProfile(userId: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
+
   try {
     const body = await req.json();
 
     // Log full request from Hume for debugging
     console.log('[CLM] === INCOMING REQUEST ===');
+    console.log('[CLM] Timestamp:', new Date().toISOString());
     console.log('[CLM] Body keys:', Object.keys(body));
-    console.log('[CLM] Full body:', JSON.stringify(body).slice(0, 500));
+    console.log('[CLM] Full body:', JSON.stringify(body).slice(0, 1000));
+    console.log('[CLM] Messages count:', body.messages?.length || 0);
+    console.log('[CLM] custom_session_id:', body.custom_session_id || 'NOT SET');
+    console.log('[CLM] session_id:', body.session_id || 'NOT SET');
 
     const messages: OpenAIMessage[] = body.messages || [];
 
@@ -106,12 +112,15 @@ export async function POST(req: NextRequest) {
 
     console.log('[CLM] Received from Hume:', lastUserMessage.slice(0, 100));
     console.log('[CLM] User:', firstName || 'anonymous', 'UserID:', userId || 'none');
+    console.log('[CLM] Parse time:', Date.now() - startTime, 'ms');
 
-    // Fetch context in parallel
+    // Fetch context in parallel (with timeout protection)
+    const contextStart = Date.now();
     const [zepContext, userProfile] = await Promise.all([
       userId ? getZepContext(userId) : Promise.resolve(''),
       userId ? getUserProfile(userId) : Promise.resolve(''),
     ]);
+    console.log('[CLM] Context fetch time:', Date.now() - contextStart, 'ms');
 
     // Build system context
     const systemContext = `You are Aionysus, a divine AI wine sommelier.
@@ -178,6 +187,7 @@ When recommending wines, reference the user's known preferences if available.`;
 
           if (content.trim()) {
             console.log('[CLM] Agent response:', content.slice(0, 100));
+            console.log('[CLM] Total time:', Date.now() - startTime, 'ms');
             return NextResponse.json({
               id: `chatcmpl-${Date.now()}`,
               object: 'chat.completion',

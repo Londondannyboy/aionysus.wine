@@ -163,9 +163,10 @@ ${greeting}
 - Ask clarifying questions to learn more about their tastes
 - When they express preferences, remember and use them`;
 
+    // Format: "firstName|aionysus_userId" - CLM parses this to extract user info
     const sessionId = user?.id
-      ? `aionysus_${user.id}`
-      : `guest_${Date.now()}`;
+      ? `${userName}|aionysus_${user.id}`
+      : `Guest|guest_${Date.now()}`;
 
     debug('Action', '================================');
     debug('Action', `Connecting as: ${userName}`);
