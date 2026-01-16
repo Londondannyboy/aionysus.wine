@@ -186,10 +186,10 @@ ${greeting}
 
       debug('Action', 'Connected successfully!');
 
-      // Auto-greet after connection
+      // Auto-greet after connection - matches mortgagecalculator.quest pattern
       setTimeout(() => {
         debug('Action', 'Sending greeting trigger');
-        sendUserInput('greet me');
+        sendUserInput('speak your greeting');
       }, 500);
 
     } catch (e) {
