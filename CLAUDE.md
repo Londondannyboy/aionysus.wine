@@ -75,6 +75,8 @@ Single-page conversational AI relocation advisor. CopilotKit Next.js runtime wit
 | articles | 210 | Relocation guides |
 | jobs | 217 | Job listings |
 | topic_images | 22 | Background images |
+| **topic_clusters** | - | Content organization into SEO clusters |
+| **page_contexts** | - | Page context for voice agent awareness |
 
 ---
 
@@ -173,3 +175,54 @@ NEON_AUTH_BASE_URL=https://ep-xxx.neonauth.us-east-1.aws.neon.tech/neondb/auth
 | `/plan {feature}` | Create implementation plan | Before coding features |
 | `/execute {plan}` | Build from plan (fresh context) | After plan approval |
 | `/evolve` | Improve system after bugs | After fixing issues |
+
+---
+
+## Phase 6: Content Migration
+
+**Goal**: Port all content from legacy project with voice agent page awareness.
+
+### New Components
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `PageContextProvider` | `src/components/voice/PageContextProvider.tsx` | Provides page context to voice agent |
+| `HeroBanner` | `src/components/layout/HeroBanner.tsx` | Reusable hero with 4 variants |
+
+### New API Routes
+
+| Route | Purpose |
+|-------|---------|
+| `GET /api/page-context?slug=...` | Fetch page context by slug |
+| `POST /api/page-context` | List pages by cluster or type |
+
+### Scripts
+
+| Script | Usage |
+|--------|-------|
+| `node scripts/create-mdx-tables.js` | Create database tables |
+| `node scripts/populate-destination.js cyprus` | Populate country from data file |
+
+### Data Files
+
+Country content in `scripts/data/<country>.js`. Cyprus is the template.
+
+---
+
+## Important Directories
+
+| Directory | Purpose |
+|-----------|---------|
+| `/Users/dankeegan/relocation.quest` | **LIVE working directory** |
+| `/Users/dankeegan/legacy-ignore-relocation.quest` | Legacy V1 content reference |
+| `/Users/dankeegan/believed-legacy-relocation.quest` | Old V2 (ignore) |
+
+---
+
+## Session Log
+
+### Jan 16, 2026
+- Fixed directory confusion (V2 vs V3)
+- Applied Phase 6 to correct V3 codebase
+- Created page_contexts and topic_clusters tables
+- Cyprus template populated as first example
