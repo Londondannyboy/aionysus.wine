@@ -254,6 +254,12 @@ export function VoiceWidget({ variant = 'inline', size = 'md', user }: VoiceWidg
       });
   }, []);
 
+  // Enhanced error handler that logs full error details
+  const handleVoiceError = (err: unknown) => {
+    debug('Error', 'VoiceProvider error details:', JSON.stringify(err, null, 2));
+    console.error('[Aionysus] Full error object:', err);
+  };
+
   const wrapperClass = variant === 'fixed'
     ? 'fixed bottom-6 right-6 z-50 flex flex-col items-center gap-2'
     : 'flex items-center';
@@ -283,7 +289,7 @@ export function VoiceWidget({ variant = 'inline', size = 'md', user }: VoiceWidg
   return (
     <div className={wrapperClass}>
       <VoiceProvider
-        onError={(err) => debug('Error', 'VoiceProvider error:', err)}
+        onError={handleVoiceError}
         onOpen={() => debug('Status', 'VoiceProvider opened')}
         onClose={(e) => debug('Status', 'VoiceProvider closed:', e)}
       >
