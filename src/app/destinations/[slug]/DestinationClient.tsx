@@ -587,7 +587,14 @@ Language: ${destination.language}
 
   return (
     <PageContextProvider pageSlug={`/destinations/${slug}`}>
-      <VoiceChatProvider>
+      <VoiceChatProvider
+        userName={userName || undefined}
+        userId={demoUserId || undefined}
+        persona={undefined}
+        pageContext={`Viewing ${destination.country_name} destination page`}
+        isReturningUser={isReturningUser}
+        userFacts={userFacts}
+      >
         <div className="min-h-screen bg-slate-50">
           {/* Navigation */}
           <NavBar />

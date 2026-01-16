@@ -16,6 +16,27 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const CONFIG_ID = process.env.NEXT_PUBLIC_HUME_CONFIG_ID || '';
 
+// Debug helper - logs to console with timestamp
+const debug = (area: string, message: string, data?: any) => {
+  const timestamp = new Date().toLocaleTimeString();
+  const prefix = `[Hume ${timestamp}]`;
+  if (data !== undefined) {
+    console.log(`${prefix} ${area}: ${message}`, data);
+  } else {
+    console.log(`${prefix} ${area}: ${message}`);
+  }
+};
+
+interface UserContext {
+  userId?: string;
+  userName?: string;
+  email?: string;
+  persona?: string;
+  pageContext?: string;
+  isReturningUser?: boolean;
+  userFacts?: string[];
+}
+
 interface VoiceChatContextType {
   isVoiceConnected: boolean;
   isVoiceLoading: boolean;
@@ -23,6 +44,7 @@ interface VoiceChatContextType {
   toggleVoice: () => void;
   lastTranscript: string | null;
   isSpeaking: boolean;
+  userContext: UserContext | null;
 }
 
 const VoiceChatContext = createContext<VoiceChatContextType>({
@@ -32,98 +54,190 @@ const VoiceChatContext = createContext<VoiceChatContextType>({
   toggleVoice: () => {},
   lastTranscript: null,
   isSpeaking: false,
+  userContext: null,
 });
 
 export const useVoiceChat = () => useContext(VoiceChatContext);
 
+// Build system prompt with user context (matches lost.london pattern)
+function buildSystemPrompt(userContext: UserContext | null, pageContext?: string): string {
+  const userName = userContext?.userName || 'Guest';
+  const isReturning = userContext?.isReturningUser || false;
+  const facts = userContext?.userFacts?.slice(0, 3).join(', ') || '';
+  const persona = userContext?.persona || 'general';
+
+  return `USER_CONTEXT:
+name: ${userName}
+${facts ? `interests: ${facts}` : ''}
+persona: ${persona}
+status: ${isReturning ? 'returning_user' : 'new_user'}
+${pageContext ? `current_page: ${pageContext}` : ''}
+
+GREETING:
+${isReturning && userName !== 'Guest' ? `This is ${userName}'s return visit. Greet them warmly by name: "Welcome back, ${userName}!"` : ''}
+${!isReturning && userName !== 'Guest' ? `New user named ${userName}. Greet them: "Hi ${userName}! Welcome to Relocation Quest."` : ''}
+${userName === 'Guest' ? `Unknown user. Greet them: "Hi there! I'm ATLAS, your relocation advisor."` : ''}
+
+IDENTITY:
+- You ARE ATLAS, an expert relocation advisor
+- You help people explore moving to new countries
+- You're friendly, knowledgeable, and conversational
+- Keep responses concise for voice (2-3 sentences)
+
+RULES:
+- Use their name occasionally (not every message)
+- Be helpful and specific about relocation topics
+- End with a relevant follow-up question
+- Focus on: visas, cost of living, lifestyle, job market`;
+}
+
 // Inner component that has access to both Hume and CopilotKit
 function VoiceChatSyncInner({
   accessToken,
+  userContext,
+  pageContext,
   children,
 }: {
   accessToken: string;
+  userContext: UserContext | null;
+  pageContext?: string;
   children: ReactNode;
 }) {
-  const { connect, disconnect, status, messages } = useVoice();
-  // Note: appendMessage is deprecated but still functional for now
+  const { connect, disconnect, status, messages, sendUserInput } = useVoice();
   const { appendMessage } = useCopilotChat();
   const [isPending, setIsPending] = useState(false);
   const [lastTranscript, setLastTranscript] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const processedMessagesRef = useRef<Set<string>>(new Set());
+  const lastSentMsgId = useRef<string | null>(null);
 
   const isConnected = status.value === 'connected';
 
-  // Sync Hume messages to CopilotKit
+  // Debug status changes
   useEffect(() => {
-    if (!messages || messages.length === 0) return;
+    debug('Status', `Connection state: ${status.value}`, {
+      isConnected,
+      userName: userContext?.userName || 'Guest',
+      configId: CONFIG_ID,
+    });
+  }, [status.value, isConnected, userContext]);
 
-    messages.forEach((msg: any, index: number) => {
-      const messageId = `${msg.type}-${index}-${msg.message?.content?.slice(0, 20) || ''}`;
+  // Forward conversation messages to CopilotKit (matches lost.london pattern)
+  useEffect(() => {
+    const conversationMsgs = messages.filter(
+      (m: any) => (m.type === 'user_message' || m.type === 'assistant_message') && m.message?.content
+    );
 
-      // Skip if already processed
-      if (processedMessagesRef.current.has(messageId)) return;
-      processedMessagesRef.current.add(messageId);
+    if (conversationMsgs.length > 0) {
+      const lastMsg = conversationMsgs[conversationMsgs.length - 1] as any;
+      const msgId = lastMsg?.id || `${conversationMsgs.length}-${lastMsg?.message?.content?.slice(0, 20)}`;
 
-      // Handle user transcript (what the user said)
-      if (msg.type === 'user_message' && msg.message?.content) {
-        setLastTranscript(msg.message.content);
+      if (lastMsg?.message?.content && msgId !== lastSentMsgId.current) {
+        const isUser = lastMsg.type === 'user_message';
+        const content = lastMsg.message.content;
 
-        // Append user message to CopilotKit chat
+        debug(isUser ? 'User' : 'Assistant', content.slice(0, 100));
+        lastSentMsgId.current = msgId;
+
+        if (isUser) {
+          setLastTranscript(content);
+        } else {
+          setIsSpeaking(true);
+        }
+
+        // Forward to CopilotKit
         try {
           appendMessage(
             new TextMessage({
-              role: MessageRole.User,
-              content: `🎤 ${msg.message.content}`,
+              role: isUser ? MessageRole.User : MessageRole.Assistant,
+              content: isUser ? `🎤 ${content}` : content,
             })
           );
         } catch (e) {
-          console.error('[VoiceChat] Failed to append user message:', e);
+          debug('Error', 'Failed to append message', e);
         }
       }
+    }
+  }, [messages, appendMessage]);
 
-      // Handle assistant response (what ATLAS said back)
-      if (msg.type === 'assistant_message' && msg.message?.content) {
-        setIsSpeaking(true);
+  // Track when assistant stops speaking
+  useEffect(() => {
+    const playbackMsgs = messages.filter((m: any) =>
+      m.type === 'assistant_message' || m.type === 'assistant_end'
+    );
+    const lastPlayback = playbackMsgs[playbackMsgs.length - 1];
 
-        // Append assistant message to CopilotKit chat
-        try {
-          appendMessage(
-            new TextMessage({
-              role: MessageRole.Assistant,
-              content: msg.message.content,
-            })
-          );
-        } catch (e) {
-          console.error('[VoiceChat] Failed to append assistant message:', e);
-        }
-      }
+    if (lastPlayback?.type === 'assistant_end') {
+      setIsSpeaking(false);
+      debug('Audio', 'Assistant finished speaking');
+    }
+  }, [messages]);
 
-      // Handle audio end (assistant stopped speaking)
-      if (msg.type === 'audio_output' && msg.end) {
+  // Handle user interruption
+  useEffect(() => {
+    const interruptions = messages.filter((m: any) => m.type === 'user_interruption');
+    if (interruptions.length > 0) {
+      const lastInterruption = interruptions[interruptions.length - 1];
+      const interruptId = `interrupt-${interruptions.length}`;
+      if (!processedMessagesRef.current.has(interruptId)) {
+        processedMessagesRef.current.add(interruptId);
+        debug('Interrupt', 'User interrupted the assistant');
         setIsSpeaking(false);
       }
-    });
-  }, [messages, appendMessage]);
+    }
+  }, [messages]);
 
   const toggleVoice = useCallback(async () => {
     if (isConnected) {
+      debug('Action', 'Disconnecting...');
       disconnect();
       setIsSpeaking(false);
+      processedMessagesRef.current.clear();
+      lastSentMsgId.current = null;
       return;
     }
 
     setIsPending(true);
+
+    // Build system prompt with user context (matches lost.london pattern)
+    const systemPrompt = buildSystemPrompt(userContext, pageContext);
+
+    // Session ID with name for backend tracking
+    const sessionIdWithName = userContext?.userName && userContext.userName !== 'Guest'
+      ? `${userContext.userName}|${userContext.userId || Date.now()}`
+      : `guest_${Date.now()}`;
+
+    debug('Action', '================================');
+    debug('Action', `Connecting as: ${userContext?.userName || 'Guest'}`);
+    debug('Action', `Session ID: ${sessionIdWithName}`);
+    debug('Action', `System Prompt: ${systemPrompt.substring(0, 300)}...`);
+    debug('Action', '================================');
+
     try {
+      // Connect with sessionSettings (matches lost.london pattern exactly)
       await connect({
-        auth: { type: 'accessToken', value: accessToken },
+        auth: { type: 'accessToken' as const, value: accessToken },
         configId: CONFIG_ID,
+        sessionSettings: {
+          type: 'session_settings' as const,
+          systemPrompt,
+          customSessionId: sessionIdWithName,
+        },
       });
-    } catch (e) {
-      console.error('[VoiceChat] Connect error:', e);
+
+      debug('Action', 'Connected successfully!');
+
+      // Auto-greet after connection - send a greeting trigger
+      setTimeout(() => {
+        debug('Action', 'Sending greeting trigger');
+        sendUserInput('speak your greeting');
+      }, 500);
+
+    } catch (e: any) {
+      debug('Error', 'Connection failed', e);
     }
     setIsPending(false);
-  }, [connect, disconnect, isConnected, accessToken]);
+  }, [connect, disconnect, isConnected, accessToken, userContext, pageContext, sendUserInput]);
 
   const contextValue: VoiceChatContextType = {
     isVoiceConnected: isConnected,
@@ -132,6 +246,7 @@ function VoiceChatSyncInner({
     toggleVoice,
     lastTranscript,
     isSpeaking,
+    userContext,
   };
 
   return (
@@ -142,22 +257,58 @@ function VoiceChatSyncInner({
 }
 
 // Provider that wraps both VoiceProvider and children
-export function VoiceChatProvider({ children }: { children: ReactNode }) {
+export function VoiceChatProvider({
+  children,
+  userName,
+  userId,
+  persona,
+  pageContext,
+  isReturningUser,
+  userFacts,
+}: {
+  children: ReactNode;
+  userName?: string;
+  userId?: string;
+  persona?: string;
+  pageContext?: string;
+  isReturningUser?: boolean;
+  userFacts?: string[];
+}) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const userContext: UserContext | null = {
+    userName: userName || 'Guest',
+    userId,
+    persona,
+    pageContext,
+    isReturningUser,
+    userFacts,
+  };
+
   useEffect(() => {
+    debug('Init', 'Fetching Hume token...');
     fetch('/api/hume-token')
       .then((res) => res.json())
       .then((data) => {
         if (data.accessToken) {
+          debug('Init', 'Token received successfully');
           setAccessToken(data.accessToken);
         } else {
+          debug('Error', 'No token in response', data);
           setError(data.error || 'No token');
         }
       })
-      .catch((err) => setError(err.message));
+      .catch((err) => {
+        debug('Error', 'Token fetch failed', err);
+        setError(err.message);
+      });
   }, []);
+
+  // Log user context on mount
+  useEffect(() => {
+    debug('Init', `User context:`, userContext);
+  }, [userName, userId, persona, isReturningUser]);
 
   // If no token yet or error, provide a fallback context
   if (!accessToken) {
@@ -167,9 +318,12 @@ export function VoiceChatProvider({ children }: { children: ReactNode }) {
           isVoiceConnected: false,
           isVoiceLoading: !error,
           voiceError: error,
-          toggleVoice: () => {},
+          toggleVoice: () => {
+            debug('Action', 'Toggle called but no token yet');
+          },
           lastTranscript: null,
           isSpeaking: false,
+          userContext,
         }}
       >
         {children}
@@ -178,8 +332,12 @@ export function VoiceChatProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <VoiceProvider>
-      <VoiceChatSyncInner accessToken={accessToken}>
+    <VoiceProvider
+      onError={(err) => debug('Error', 'VoiceProvider error:', err)}
+      onOpen={() => debug('Status', 'VoiceProvider opened')}
+      onClose={(e) => debug('Status', 'VoiceProvider closed:', e)}
+    >
+      <VoiceChatSyncInner accessToken={accessToken} userContext={userContext} pageContext={pageContext}>
         {children}
       </VoiceChatSyncInner>
     </VoiceProvider>
@@ -194,6 +352,7 @@ export function SyncedVoiceButton() {
     voiceError,
     toggleVoice,
     isSpeaking,
+    userContext,
   } = useVoiceChat();
 
   if (voiceError) {
@@ -220,6 +379,8 @@ export function SyncedVoiceButton() {
       </div>
     );
   }
+
+  const displayName = userContext?.userName || 'Guest';
 
   return (
     <motion.button
@@ -274,8 +435,8 @@ export function SyncedVoiceButton() {
           : isVoiceConnected
           ? isSpeaking
             ? 'ATLAS speaking...'
-            : 'Listening...'
-          : 'Talk to ATLAS'}
+            : `Listening, ${displayName}...`
+          : `Talk to ATLAS`}
       </span>
 
       {/* Sound wave animation when connected */}
