@@ -421,7 +421,8 @@ async def chat_completions(request: Request):
         # Run agent
         deps = BuddyDeps(session_id=session_id)
         result = await buddy_agent.run(user_message, deps=deps)
-        response_text = result.data if hasattr(result, 'data') else str(result)
+        # Pydantic AI returns result.data as the actual output string
+        response_text = result.data
 
         if stream:
             async def stream_response() -> AsyncGenerator[str, None]:
@@ -514,7 +515,8 @@ async def copilotkit_endpoint(request: Request):
         session_id = str(uuid.uuid4())
         deps = BuddyDeps(session_id=session_id)
         result = await buddy_agent.run(user_message, deps=deps)
-        response_text = result.data if hasattr(result, 'data') else str(result)
+        # Pydantic AI returns result.data as the actual output string
+        response_text = result.data
 
         return {
             "messages": [{
