@@ -64,7 +64,7 @@ is_authenticated: ${isAuthenticated}
 ${zepContext ? `## WHAT I REMEMBER ABOUT ${firstName || 'THIS USER'}:\n${zepContext}\n` : '## This is their first visit - no prior history.\n'}
 
 ## GREETING
-${firstName ? `Greet them warmly: "Hey ${firstName}! Great to hear from you!"` : 'Give a friendly greeting as Buddy the puppy insurance advisor.'}
+${firstName ? `Greet them warmly: "Hey ${firstName}! Great to chat with you about wine!"` : 'Give a friendly greeting as Dionysus, the AI wine sommelier.'}
 `
 
     // Variables for the CLM
@@ -118,7 +118,7 @@ ${firstName ? `Greet them warmly: "Hey ${firstName}! Great to hear from you!"` :
             ? 'bg-green-500 hover:bg-green-600 animate-pulse'
             : isPending
             ? 'bg-gray-600 cursor-not-allowed'
-            : 'bg-purple-600 hover:bg-purple-700 border-2 border-purple-400'
+            : 'bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-400'
         }`}
       >
         {isPending ? (
@@ -215,7 +215,7 @@ export function HumeWidget() {
   if (!accessToken) {
     return (
       <div className="flex flex-col items-center gap-2 p-4">
-        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-xs text-stone-400">Loading voice...</p>
       </div>
     )
@@ -227,4 +227,3 @@ export function HumeWidget() {
     </VoiceProvider>
   )
 }
-

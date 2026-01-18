@@ -2,29 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const ZEP_API_KEY = process.env.ZEP_API_KEY || '';
 
-// Categorize a fact into puppy insurance ontological type
-function categorize(fact: string): 'dog_breed' | 'dog_name' | 'dog_age' | 'health' | 'insurance' | 'fact' {
+// Categorize a fact into pension advisor ontological type
+function categorize(fact: string): 'pension_type' | 'provider' | 'contribution' | 'retirement' | 'risk' | 'fact' {
   const lower = fact.toLowerCase();
 
-  // Dog breed keywords
-  if (['labrador', 'retriever', 'bulldog', 'poodle', 'shepherd', 'beagle', 'boxer', 'terrier', 'spaniel', 'husky', 'breed', 'mixed breed'].some(k => lower.includes(k))) {
-    return 'dog_breed';
+  // Pension type preferences
+  if (['sipp', 'workplace', 'personal', 'stakeholder', 'defined benefit', 'final salary', 'auto-enrolment'].some(k => lower.includes(k))) {
+    return 'pension_type';
   }
-  // Dog name keywords
-  if (['named', "dog's name", 'called', 'puppy named', 'dog is'].some(k => lower.includes(k))) {
-    return 'dog_name';
+  // Providers
+  if (['nest', 'vanguard', 'hargreaves', 'fidelity', 'aj bell', 'aviva', 'scottish widows', 'legal & general', 'standard life'].some(k => lower.includes(k))) {
+    return 'provider';
   }
-  // Age keywords
-  if (['year old', 'years old', 'months old', 'puppy', 'senior', 'age'].some(k => lower.includes(k))) {
-    return 'dog_age';
+  // Contribution related
+  if (['contribute', 'contribution', 'monthly', 'employer', 'salary sacrifice', 'tax relief', 'annual allowance'].some(k => lower.includes(k))) {
+    return 'contribution';
   }
-  // Health keywords
-  if (['health', 'condition', 'hip', 'dysplasia', 'allergy', 'breathing', 'heart', 'surgery', 'vet'].some(k => lower.includes(k))) {
-    return 'health';
+  // Retirement planning
+  if (['retire', 'retirement', 'drawdown', 'annuity', 'state pension', 'pension age', 'pension freedom'].some(k => lower.includes(k))) {
+    return 'retirement';
   }
-  // Insurance keywords
-  if (['plan', 'coverage', 'premium', 'quote', 'basic', 'standard', 'comprehensive', 'deductible'].some(k => lower.includes(k))) {
-    return 'insurance';
+  // Risk preferences
+  if (['risk', 'cautious', 'balanced', 'aggressive', 'growth', 'conservative', 'equity', 'bond', 'fund'].some(k => lower.includes(k))) {
+    return 'risk';
   }
   return 'fact';
 }
@@ -32,8 +32,8 @@ function categorize(fact: string): 'dog_breed' | 'dog_name' | 'dog_age' | 'healt
 // Clean up fact text for display
 function cleanFact(fact: string): string {
   return fact
-    .replace(/^(the user |user |they |he |she |their dog )/i, '')
-    .replace(/^(is |are |has |have |wants |prefers )/i, '')
+    .replace(/^(the user |user |they |he |she |their )/i, '')
+    .replace(/^(is |are |has |have |wants |prefers |likes |enjoys )/i, '')
     .trim();
 }
 
@@ -44,13 +44,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       context: '',
       facts: [],
-      entities: { breeds: [], names: [], ages: [], health: [], insurance: [] }
+      entities: { pension_types: [], providers: [], contributions: [], retirement: [], risk: [] }
     });
   }
 
   try {
-    // Use puppyinsurance prefix for Zep user ID
-    const zepUserId = `puppyinsurance_${userId}`;
+    // Use penelope prefix for Zep user ID
+    const zepUserId = `penelope_${userId}`;
 
     // Fetch user's memory from Zep knowledge graph
     const response = await fetch('https://api.getzep.com/api/v2/graph/search', {
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       },
       body: JSON.stringify({
         user_id: zepUserId,
-        query: 'dog breed name age health insurance plan coverage preferences',
+        query: 'pension preferences provider contribution retirement risk employer scheme',
         limit: 15,
         scope: 'edges',
       }),
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         context: '',
         facts: [],
-        entities: { breeds: [], names: [], ages: [], health: [], insurance: [] }
+        entities: { pension_types: [], providers: [], contributions: [], retirement: [], risk: [] }
       });
     }
 
@@ -82,11 +82,11 @@ export async function GET(request: NextRequest) {
     // Extract and categorize facts
     const categorizedFacts: Array<{ fact: string; type: string; clean: string }> = [];
     const entities = {
-      breeds: [] as string[],
-      names: [] as string[],
-      ages: [] as string[],
-      health: [] as string[],
-      insurance: [] as string[],
+      pension_types: [] as string[],
+      providers: [] as string[],
+      contributions: [] as string[],
+      retirement: [] as string[],
+      risk: [] as string[],
     };
 
     for (const edge of edges) {
@@ -98,36 +98,36 @@ export async function GET(request: NextRequest) {
       categorizedFacts.push({ fact: edge.fact, type, clean });
 
       // Collect unique entities by type
-      if (type === 'dog_breed' && !entities.breeds.includes(clean)) {
-        entities.breeds.push(clean);
-      } else if (type === 'dog_name' && !entities.names.includes(clean)) {
-        entities.names.push(clean);
-      } else if (type === 'dog_age' && !entities.ages.includes(clean)) {
-        entities.ages.push(clean);
-      } else if (type === 'health' && !entities.health.includes(clean)) {
-        entities.health.push(clean);
-      } else if (type === 'insurance' && !entities.insurance.includes(clean)) {
-        entities.insurance.push(clean);
+      if (type === 'pension_type' && !entities.pension_types.includes(clean)) {
+        entities.pension_types.push(clean);
+      } else if (type === 'provider' && !entities.providers.includes(clean)) {
+        entities.providers.push(clean);
+      } else if (type === 'contribution' && !entities.contributions.includes(clean)) {
+        entities.contributions.push(clean);
+      } else if (type === 'retirement' && !entities.retirement.includes(clean)) {
+        entities.retirement.push(clean);
+      } else if (type === 'risk' && !entities.risk.includes(clean)) {
+        entities.risk.push(clean);
       }
     }
 
     // Build context string grouped by type
     const contextParts: string[] = [];
 
-    if (entities.breeds.length) {
-      contextParts.push(`Dog Breed: ${entities.breeds.join(', ')}`);
+    if (entities.pension_types.length) {
+      contextParts.push(`Pension Preferences: ${entities.pension_types.join(', ')}`);
     }
-    if (entities.names.length) {
-      contextParts.push(`Dog Name: ${entities.names.join(', ')}`);
+    if (entities.providers.length) {
+      contextParts.push(`Interested Providers: ${entities.providers.join(', ')}`);
     }
-    if (entities.ages.length) {
-      contextParts.push(`Dog Age: ${entities.ages.join(', ')}`);
+    if (entities.contributions.length) {
+      contextParts.push(`Contribution Info: ${entities.contributions.join(', ')}`);
     }
-    if (entities.health.length) {
-      contextParts.push(`Health Notes: ${entities.health.join(', ')}`);
+    if (entities.retirement.length) {
+      contextParts.push(`Retirement Plans: ${entities.retirement.join(', ')}`);
     }
-    if (entities.insurance.length) {
-      contextParts.push(`Insurance Interest: ${entities.insurance.join(', ')}`);
+    if (entities.risk.length) {
+      contextParts.push(`Risk Preferences: ${entities.risk.join(', ')}`);
     }
 
     const context = contextParts.length > 0
@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       context: '',
       facts: [],
-      entities: { breeds: [], names: [], ages: [], health: [], insurance: [] }
+      entities: { pension_types: [], providers: [], contributions: [], retirement: [], risk: [] }
     });
   }
 }

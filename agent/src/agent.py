@@ -1,5 +1,5 @@
 """
-Buddy Agent - Puppy Insurance Voice Assistant
+Penelope Agent - UK Pension Advisor Voice Assistant
 
 Single Pydantic AI agent serving both:
 - CopilotKit chat (AG-UI protocol)
@@ -29,14 +29,16 @@ try:
     ZEP_AVAILABLE = True
 except ImportError:
     ZEP_AVAILABLE = False
-    print("[BUDDY] Warning: zep-cloud not installed, memory features disabled", file=sys.stderr)
+    print("[PENELOPE] Warning: zep-cloud not installed, memory features disabled", file=sys.stderr)
 
 from .database import (
-    get_all_breeds,
-    get_breed_by_name,
-    search_breeds,
-    calculate_quote,
-    get_insurance_plans,
+    get_all_schemes,
+    get_scheme_by_name,
+    search_schemes,
+    get_schemes_by_type,
+    get_scheme_details,
+    get_scheme_funds,
+    compare_scheme_fees,
 )
 
 # =============================================================================
@@ -65,11 +67,12 @@ class SessionContext:
     user_name: Optional[str] = None
     context_fetched: bool = False
 
-    # Dog context
-    dog_name: Optional[str] = None
-    dog_breed: Optional[str] = None
-    dog_age: Optional[int] = None
-    has_preexisting_conditions: bool = False
+    # Pension context
+    current_scheme: Optional[str] = None
+    scheme_type_preference: Optional[str] = None
+    contribution_amount: Optional[float] = None
+    retirement_age: Optional[int] = None
+    current_age: Optional[int] = None
 
 
 def get_session_context(session_id: str) -> SessionContext:
@@ -101,106 +104,121 @@ def get_zep_client() -> Optional["AsyncZep"]:
         api_key = os.environ.get("ZEP_API_KEY")
         if api_key:
             _zep_client = AsyncZep(api_key=api_key)
-            print("[BUDDY] Zep memory client initialized", file=sys.stderr)
+            print("[PENELOPE] Zep memory client initialized", file=sys.stderr)
         else:
-            print("[BUDDY] ZEP_API_KEY not set, memory disabled", file=sys.stderr)
+            print("[PENELOPE] ZEP_API_KEY not set, memory disabled", file=sys.stderr)
     return _zep_client
 
 
 def get_zep_user_id(user_id: str) -> str:
     """Prefix user_id with project name to separate from other projects."""
-    return f"puppyinsurance_{user_id}"
+    return f"penelope_{user_id}"
 
 
 # =============================================================================
-# BUDDY SYSTEM PROMPT
+# PENELOPE SYSTEM PROMPT
 # =============================================================================
 
-BUDDY_SYSTEM_PROMPT = """You are Buddy, a friendly and knowledgeable puppy insurance advisor. You help pet owners find the right insurance coverage for their dogs.
+PENELOPE_SYSTEM_PROMPT = """You are Penelope, a friendly and knowledgeable UK pension expert. You help people understand pensions, compare schemes, and plan for retirement.
 
 ## YOUR PERSONALITY
-- Warm, friendly, and enthusiastic about dogs
-- Use dog-related language naturally (like "paw-some!", "fur baby", "good boy/girl")
-- Be empathetic when discussing health concerns
-- Always prioritize the dog's wellbeing
+- Warm, friendly, and reassuring - pensions can be confusing!
+- Clear, jargon-free explanations of complex pension topics
+- Professional but approachable - like a helpful friend who happens to be a pension expert
+- Always mention FCA regulation where relevant for credibility
+- Encourage people to seek professional advice for complex decisions
 
-## PRIORITY 1: DOG INFORMATION GATHERING
+## PRIORITY 1: PENSION DISCOVERY
 
-When a user mentions their dog, you MUST collect key information using HITL tools:
+When a user asks about pensions, use the appropriate tools:
 
-**TRIGGER → ACTION mapping:**
+**TRIGGER -> ACTION mapping:**
 
 | User says... | Tool to call |
 |--------------|--------------|
-| "I have a Labrador" | confirm_dog_breed(breed_name="Labrador Retriever", user_id=...) |
-| "My dog is 3 years old" | confirm_dog_age(age_years=3, user_id=...) |
-| "Her name is Bella" | confirm_dog_name(dog_name="Bella", user_id=...) |
-| "He has hip problems" | confirm_preexisting_condition(has_conditions=true, condition_details="hip problems", user_id=...) |
+| "What SIPPs are available?" | search_pension_schemes(query="SIPP") |
+| "Tell me about Vanguard" | get_scheme_details(scheme_name="Vanguard") |
+| "Show me workplace pensions" | get_schemes_by_type(scheme_type="workplace") |
+| "Compare NEST and People's Pension" | compare_schemes(scheme1="NEST", scheme2="People's Pension") |
+| "What fees does Hargreaves charge?" | compare_pension_fees(scheme_names=["Hargreaves Lansdown"]) |
+| "How much will I have at retirement?" | calculate_retirement_income(...) |
 
-## PRIORITY 2: INSURANCE GUIDANCE
+## PRIORITY 2: PENSION EDUCATION
 
-After collecting dog info, help them find the right plan:
+Share clear explanations of:
 
-**INSURANCE PLANS:**
-- Basic ($15/mo): Accident-only coverage, $5k annual limit, $250 deductible
-- Standard ($35/mo): Accidents + illness, prescriptions, $10k limit, $200 deductible
-- Premium ($55/mo): Adds routine care, dental, hereditary conditions, $20k limit, $100 deductible
-- Comprehensive ($85/mo): Everything, zero deductible, alternative therapies, $50k limit
+**PENSION TYPES:**
+- Workplace pensions: Auto-enrolment schemes via employer (NEST, People's Pension, NOW:)
+- Personal pensions: Individual arrangements (Aviva, Scottish Widows, L&G)
+- SIPPs: Self-Invested Personal Pensions for DIY investors (Vanguard, AJ Bell, HL)
+- State Pension: Government pension based on NI contributions
+- Defined Benefit: Final salary schemes (rare, but valuable)
 
-**BREED RISK CATEGORIES:**
-- HIGH RISK (higher premiums): French Bulldog, Bulldog, Cavalier King Charles Spaniel, Great Dane
-- MEDIUM RISK: Labrador, German Shepherd, Golden Retriever, Boxer, Rottweiler, Dachshund
-- LOW RISK (lower premiums): Chihuahua, Beagle, Poodle, Yorkshire Terrier, Mixed Breed, Border Collie
+**KEY NUMBERS (2024/25):**
+- Auto-enrolment minimum: 8% total (3% employer, 5% employee)
+- Tax relief: 20%, 40%, 45% depending on tax band
+- Annual allowance: £60,000
+- Lifetime allowance: Abolished April 2024
+- State pension age: 66 (rising to 67 by 2028)
+- Pension freedoms: Age 55 (rising to 57 in 2028)
+- Full state pension: £221.20/week (2024/25)
 
-## PRIORITY 3: QUOTE GENERATION
+**MAJOR PROVIDERS:**
+- Workplace: NEST, People's Pension, NOW: Pensions, Smart Pension
+- SIPP: Vanguard, AJ Bell, Hargreaves Lansdown, Fidelity, Interactive Investor
+- Traditional: Aviva, Scottish Widows, Legal & General, Standard Life
 
-When user is ready, generate a personalized quote:
-- Call generate_insurance_quote with their dog details
-- Explain the premium calculation factors
-- Highlight relevant coverage for their breed's health concerns
+## PRIORITY 3: FEE COMPARISON
+
+Help users understand fees:
+- Annual Management Charge (AMC): Typically 0.15% - 1.5%
+- Platform fees: Some charge flat fees, others percentage
+- Transaction fees: May apply for buying/selling
+- Lower fees compound to significant savings over time
 
 ## CONVERSATIONAL FLOW
 
 Guide users naturally through:
-1. What kind of dog do you have? (breed)
-2. How old is your furry friend? (age)
-3. What's their name? (personalization)
-4. Any health concerns I should know about? (preexisting conditions)
-5. Based on [dog_name]'s profile, here are your coverage options...
+1. What type of pension are you interested in? (workplace, SIPP, personal)
+2. What's your situation? (employed, self-employed, approaching retirement)
+3. What matters most? (low fees, investment choice, simplicity)
+4. Based on your needs, here are my recommendations...
 
 ## RESPONSE STYLE
 - Keep responses concise for voice (50-100 words max)
-- Be warm and caring - these are their fur babies!
-- Use the dog's name once you know it
-- End with a natural follow-up question to keep the conversation flowing
+- Be warm and reassuring - pensions can feel overwhelming!
+- Use the user's name once you know it
+- Explain jargon when you use it
+- End with a natural follow-up to keep the conversation flowing
 
-## BREED KNOWLEDGE
+## PENSION TIPS TO SHARE
 
-When discussing breeds, share relevant health info:
-- Labrador: Prone to hip dysplasia, obesity, ear infections
-- French Bulldog: Breathing issues, skin allergies, spinal disorders
-- German Shepherd: Hip dysplasia, bloat, degenerative myelopathy
-- Golden Retriever: Hip dysplasia, cancer, heart disease
-- Beagle: Epilepsy, hypothyroidism, cherry eye
+When relevant:
+- "Always get your employer match - it's free money!"
+- "Tax relief means you get 20-45% of your contribution back"
+- "Lower fees compound to big savings over decades"
+- "The state pension alone won't maintain most people's lifestyle"
+- "It's never too late to start - but the earlier the better"
+- "Consider consolidating old pensions for simplicity"
 
 ## IDENTITY (CRITICAL)
-- You ARE Buddy, the Puppy Insurance advisor
+- You ARE Penelope, the friendly pension guide
 - NEVER say "As a language model" or "I'm an AI"
-- If asked who you are: "I'm Buddy, your friendly puppy insurance advisor! Woof!"
+- If asked who you are: "I'm Penelope, your pension guide! I'm here to make retirement planning simple and help you understand your options."
+- Always recommend consulting a regulated financial adviser for personal advice
 
 ## USER PERSONALIZATION
 - If the user's name is provided in [brackets] at the start of their message, USE IT naturally
-- Greet returning users by name: "Hey [Name]! Great to hear from you again!"
+- Greet returning users by name: "Welcome back, [Name]! Ready to continue planning your retirement?"
 - Use their name occasionally but not excessively (every 2-3 exchanges is good)
-- If you learn new info about their dog, acknowledge it warmly
+- Remember their preferences within the session
 
 ## PHONETIC CORRECTIONS (voice transcription)
-- "lab/labrador/lab retriever" -> Labrador Retriever
-- "golden/golden retriever" -> Golden Retriever
-- "frenchie/french bull dog" -> French Bulldog
-- "german shepard/shepherd" -> German Shepherd
-- "yorkie" -> Yorkshire Terrier
-- "chi-wow-wow/chihuahua" -> Chihuahua
+- "sip/sipp" -> SIPP (Self-Invested Personal Pension)
+- "nest/ness" -> NEST (National Employment Savings Trust)
+- "isa/eyes-a" -> ISA (but clarify this is different from a pension)
+- "annuity/annuity" -> Annuity
+- "drawdown/draw down" -> Drawdown
 """
 
 
@@ -209,16 +227,16 @@ When discussing breeds, share relevant health info:
 # =============================================================================
 
 @dataclass
-class BuddyDeps:
-    """Dependencies for the Buddy agent."""
+class PenelopeDeps:
+    """Dependencies for the Penelope agent."""
     session_id: str = ""
     user_id: Optional[str] = None
 
 
-buddy_agent = Agent(
+penelope_agent = Agent(
     "google-gla:gemini-2.0-flash",
-    deps_type=BuddyDeps,
-    system_prompt=BUDDY_SYSTEM_PROMPT,
+    deps_type=PenelopeDeps,
+    system_prompt=PENELOPE_SYSTEM_PROMPT,
 )
 
 
@@ -226,139 +244,254 @@ buddy_agent = Agent(
 # AGENT TOOLS
 # =============================================================================
 
-@buddy_agent.tool
-async def confirm_dog_breed(ctx: RunContext[BuddyDeps], breed_name: str) -> str:
-    """Confirm the user's dog breed. Call this when user mentions their dog's breed."""
-    session_ctx = get_session_context(ctx.deps.session_id)
-
-    # Look up breed in database
-    breed = await get_breed_by_name(breed_name)
-
-    if breed:
-        session_ctx.dog_breed = breed['name']
-        health_issues = ', '.join(breed.get('common_health_issues', [])[:3])
-        return f"Confirmed: {breed['name']} - a {breed['size']} breed with {breed['risk_category']} health risk. Common concerns: {health_issues}. Typical lifespan: {breed.get('avg_lifespan_years', 12)} years."
-    else:
-        # Try fuzzy search
-        matches = await search_breeds(breed_name)
-        if matches:
-            suggestions = ', '.join([b['name'] for b in matches[:3]])
-            return f"I couldn't find an exact match for '{breed_name}'. Did you mean: {suggestions}?"
-        return f"I couldn't find '{breed_name}' in our database. Is it a mixed breed? We cover mixed breeds too!"
-
-
-@buddy_agent.tool
-async def confirm_dog_age(ctx: RunContext[BuddyDeps], age_years: int) -> str:
-    """Confirm the user's dog age. Call this when user mentions their dog's age."""
-    session_ctx = get_session_context(ctx.deps.session_id)
-    session_ctx.dog_age = age_years
-
-    if age_years < 1:
-        return f"A puppy! At {age_years} months old, they might be a bit more accident-prone but that's totally normal for young pups."
-    elif age_years >= 7:
-        return f"{age_years} years old - that's a distinguished senior pup! We have great coverage for older dogs' health needs."
-    else:
-        return f"{age_years} years old - right in their prime! Great age for getting comprehensive coverage."
-
-
-@buddy_agent.tool
-async def confirm_dog_name(ctx: RunContext[BuddyDeps], dog_name: str) -> str:
-    """Confirm the user's dog name. Call this when user shares their dog's name."""
-    session_ctx = get_session_context(ctx.deps.session_id)
-    session_ctx.dog_name = dog_name
-    return f"What a wonderful name! I'll make sure {dog_name}'s profile is all set up. 🐾"
-
-
-@buddy_agent.tool
-async def confirm_preexisting_condition(
-    ctx: RunContext[BuddyDeps],
-    has_conditions: bool,
-    condition_details: Optional[str] = None
+@penelope_agent.tool
+async def search_pension_schemes(
+    ctx: RunContext[PenelopeDeps],
+    query: str,
+    scheme_type: Optional[str] = None,
 ) -> str:
-    """Confirm if the dog has preexisting conditions. Call this when user mentions health history."""
-    session_ctx = get_session_context(ctx.deps.session_id)
-    session_ctx.has_preexisting_conditions = has_conditions
-
-    if has_conditions:
-        return f"Thanks for letting me know about {condition_details or 'that'}. Our Premium and Comprehensive plans can still cover new conditions, and I'll factor this into the quote."
-    return "Great! A clean bill of health means more coverage options and potentially lower premiums."
-
-
-@buddy_agent.tool
-async def generate_insurance_quote(
-    ctx: RunContext[BuddyDeps],
-    plan_type: str = "standard"
-) -> str:
-    """Generate a personalized insurance quote. Call this when ready to show pricing."""
+    """Search for pension schemes by name, provider, or type. Call this when user asks about specific pension schemes."""
     session_ctx = get_session_context(ctx.deps.session_id)
 
-    if not session_ctx.dog_breed or session_ctx.dog_age is None:
-        return "I need to know the breed and age to generate an accurate quote. What kind of dog do you have, and how old are they?"
+    schemes = await search_schemes(query)
 
-    # Get breed info
-    breed = await get_breed_by_name(session_ctx.dog_breed)
-    if not breed:
-        breed = await get_breed_by_name("Mixed Breed")
+    # Filter by type if specified
+    if scheme_type and schemes:
+        schemes = [s for s in schemes if s.get('scheme_type', '').lower() == scheme_type.lower()]
 
-    # Calculate quote
-    quote = calculate_quote(
-        breed,
-        session_ctx.dog_age,
-        plan_type,
-        session_ctx.has_preexisting_conditions
-    )
-
-    dog_name = session_ctx.dog_name or f"your {session_ctx.dog_breed}"
-
-    return f"""Here's the quote for {dog_name}:
-
-**{quote['plan']['name']} Plan**
-- Monthly Premium: ${quote['monthly_premium']:.2f}
-- Annual Coverage: Up to ${quote['plan']['annual_coverage_limit']:,}
-- Deductible: ${quote['plan']['deductible']}
-
-Key features: {', '.join(quote['plan']['features'][:3])}
-
-{f"Note: Premium adjusted for {breed['risk_category']} risk breed and age factors." if breed else ""}
-
-Would you like to compare other plans or proceed with this one?"""
+    if schemes:
+        session_ctx.current_scheme = schemes[0].get('name')
+        results = []
+        for scheme in schemes[:5]:
+            amc = scheme.get('annual_management_charge')
+            amc_str = f" | AMC: {amc}%" if amc else ""
+            rating = scheme.get('performance_rating', '')
+            rating_str = f" | {'*' * rating}" if rating else ""
+            results.append(f"- {scheme['name']} ({scheme.get('provider', 'Unknown')}){amc_str}{rating_str}")
+        return f"Found these pension schemes matching '{query}':\n" + "\n".join(results)
+    else:
+        return f"I couldn't find pension schemes matching '{query}'. Would you like me to suggest some popular options?"
 
 
-@buddy_agent.tool
-async def show_all_plans(ctx: RunContext[BuddyDeps]) -> str:
-    """Show all available insurance plans for comparison."""
-    plans = get_insurance_plans()
+@penelope_agent.tool
+async def get_scheme_details(ctx: RunContext[PenelopeDeps], scheme_name: str) -> str:
+    """Get detailed information about a specific pension scheme. Call this when user wants to know more about a scheme."""
+    session_ctx = get_session_context(ctx.deps.session_id)
 
-    result = "Here are our coverage options:\n\n"
-    for plan in plans:
-        result += f"**{plan['name']}** (${plan['base_monthly_premium']}/mo)\n"
-        result += f"  - Coverage: ${plan['annual_coverage_limit']:,}/year\n"
-        result += f"  - Deductible: ${plan['deductible']}\n"
-        result += f"  - {', '.join(plan['features'][:2])}\n\n"
+    scheme = await get_scheme_by_name(scheme_name)
 
-    return result + "Which plan interests you? I can give you a personalized quote!"
+    if scheme:
+        session_ctx.current_scheme = scheme['name']
 
+        # Build detailed response
+        details = [f"**{scheme['name']}** by {scheme.get('provider', 'Unknown')}"]
+        if scheme.get('scheme_type'):
+            details.append(f"Type: {scheme['scheme_type'].title()}")
+        if scheme.get('annual_management_charge'):
+            details.append(f"Annual Management Charge: {scheme['annual_management_charge']}%")
+        if scheme.get('platform_fee'):
+            details.append(f"Platform Fee: {scheme['platform_fee']}%")
+        if scheme.get('min_contribution'):
+            details.append(f"Minimum Contribution: £{scheme['min_contribution']}/month")
+        if scheme.get('fund_options'):
+            details.append(f"Fund Options: {scheme['fund_options']} funds available")
+        if scheme.get('sipp_available'):
+            details.append("SIPP Available: Yes")
+        if scheme.get('drawdown_available'):
+            details.append("Drawdown Available: Yes")
+        if scheme.get('fca_regulated'):
+            details.append("FCA Regulated: Yes")
+        if scheme.get('performance_rating'):
+            details.append(f"Rating: {'*' * scheme['performance_rating']} ({scheme['performance_rating']}/5)")
+        if scheme.get('features'):
+            features = scheme['features'][:4] if isinstance(scheme['features'], list) else [scheme['features']]
+            details.append(f"Features: {', '.join(features)}")
+        if scheme.get('suitable_for'):
+            suitable = scheme['suitable_for'][:3] if isinstance(scheme['suitable_for'], list) else [scheme['suitable_for']]
+            details.append(f"Best for: {', '.join(suitable)}")
 
-@buddy_agent.tool
-async def get_breed_info(ctx: RunContext[BuddyDeps], breed_name: str) -> str:
-    """Get detailed information about a dog breed."""
-    breed = await get_breed_by_name(breed_name)
-
-    if not breed:
-        matches = await search_breeds(breed_name)
+        return "\n".join(details)
+    else:
+        matches = await search_schemes(scheme_name)
         if matches:
-            return f"Did you mean: {', '.join([b['name'] for b in matches[:3]])}?"
-        return f"I couldn't find information about {breed_name}."
+            suggestions = ', '.join([s['name'] for s in matches[:3]])
+            return f"I couldn't find an exact match for '{scheme_name}'. Did you mean: {suggestions}?"
+        return f"I couldn't find information about '{scheme_name}'. Could you tell me more about what you're looking for?"
 
-    return f"""**{breed['name']}**
-- Size: {breed['size']}
-- Health Risk: {breed['risk_category']}
-- Lifespan: ~{breed.get('avg_lifespan_years', 12)} years
-- Exercise Needs: {breed.get('exercise_needs', 'moderate')}
-- Common Health Issues: {', '.join(breed.get('common_health_issues', [])[:4])}
-- Temperament: {', '.join(breed.get('temperament', [])[:3])}
 
-Premium multiplier: {breed.get('base_premium_multiplier', 1.0)}x (based on breed health risk)"""
+@penelope_agent.tool
+async def get_schemes_by_type(ctx: RunContext[PenelopeDeps], scheme_type: str) -> str:
+    """Get pension schemes by type (workplace, sipp, personal, stakeholder). Call this when user asks for a specific type."""
+    schemes = await get_schemes_by_type(scheme_type)
+
+    if schemes:
+        results = []
+        for scheme in schemes[:6]:
+            amc = scheme.get('annual_management_charge')
+            amc_str = f" - AMC: {amc}%" if amc else ""
+            results.append(f"- {scheme['name']} ({scheme.get('provider', 'Unknown')}){amc_str}")
+
+        type_descriptions = {
+            'workplace': 'Workplace pensions are provided by employers under auto-enrolment. Your employer contributes too!',
+            'sipp': 'SIPPs (Self-Invested Personal Pensions) give you full control over your investments.',
+            'personal': 'Personal pensions are individual arrangements, good for self-employed or additional savings.',
+            'stakeholder': 'Stakeholder pensions have capped charges and flexible contributions.',
+        }
+        description = type_descriptions.get(scheme_type.lower(), '')
+
+        return f"Here are some {scheme_type} pensions:\n" + "\n".join(results) + (f"\n\n{description}" if description else "")
+    else:
+        return f"I don't have any {scheme_type} pensions in my database. The main types are: workplace, SIPP, personal, and stakeholder."
+
+
+@penelope_agent.tool
+async def compare_schemes(ctx: RunContext[PenelopeDeps], scheme1: str, scheme2: str) -> str:
+    """Compare two pension schemes side by side. Call this when user wants to compare schemes."""
+    s1 = await get_scheme_by_name(scheme1)
+    s2 = await get_scheme_by_name(scheme2)
+
+    if not s1 and not s2:
+        return f"I couldn't find either '{scheme1}' or '{scheme2}' in my database. Could you check the names?"
+    elif not s1:
+        return f"I found {s2['name']} but couldn't find '{scheme1}'. Would you like details on {s2['name']}?"
+    elif not s2:
+        return f"I found {s1['name']} but couldn't find '{scheme2}'. Would you like details on {s1['name']}?"
+
+    comparison = f"**{s1['name']}** vs **{s2['name']}**\n\n"
+
+    # Compare key attributes
+    attrs = [
+        ('Provider', 'provider'),
+        ('Type', 'scheme_type'),
+        ('AMC', 'annual_management_charge'),
+        ('Platform Fee', 'platform_fee'),
+        ('Min Contribution', 'min_contribution'),
+        ('Fund Options', 'fund_options'),
+        ('Rating', 'performance_rating'),
+    ]
+
+    for label, key in attrs:
+        v1 = s1.get(key, 'N/A')
+        v2 = s2.get(key, 'N/A')
+        if key in ['annual_management_charge', 'platform_fee']:
+            v1 = f"{v1}%" if v1 != 'N/A' else 'N/A'
+            v2 = f"{v2}%" if v2 != 'N/A' else 'N/A'
+        elif key == 'min_contribution':
+            v1 = f"£{v1}/mo" if v1 != 'N/A' else 'N/A'
+            v2 = f"£{v2}/mo" if v2 != 'N/A' else 'N/A'
+        elif key == 'performance_rating':
+            v1 = f"{'*' * v1}" if v1 != 'N/A' and v1 else 'N/A'
+            v2 = f"{'*' * v2}" if v2 != 'N/A' and v2 else 'N/A'
+        comparison += f"**{label}:** {v1} | {v2}\n"
+
+    return comparison
+
+
+@penelope_agent.tool
+async def compare_pension_fees(ctx: RunContext[PenelopeDeps], scheme_names: List[str]) -> str:
+    """Compare fees between multiple pension schemes. Call this when user asks about fees."""
+    results = await compare_scheme_fees(scheme_names)
+
+    if results:
+        comparison = "**Fee Comparison:**\n\n"
+        for scheme in results:
+            amc = scheme.get('annual_management_charge', 'N/A')
+            platform = scheme.get('platform_fee', 'N/A')
+            comparison += f"**{scheme['name']}**\n"
+            comparison += f"  - AMC: {amc}%\n" if amc != 'N/A' else "  - AMC: Not specified\n"
+            comparison += f"  - Platform: {platform}%\n\n" if platform != 'N/A' else "  - Platform: None/included\n\n"
+
+        comparison += "\n*Lower fees compound to big savings over decades!*"
+        return comparison
+    else:
+        return "I couldn't find fee information for those schemes. Which pension providers would you like me to compare?"
+
+
+@penelope_agent.tool
+async def calculate_retirement_income(
+    ctx: RunContext[PenelopeDeps],
+    current_age: int,
+    retirement_age: int,
+    monthly_contribution: float,
+    current_pot: float = 0,
+    employer_contribution: float = 0,
+    expected_return: float = 5.0
+) -> str:
+    """Calculate estimated retirement pot based on contributions. Call this when user asks about retirement projections."""
+    session_ctx = get_session_context(ctx.deps.session_id)
+    session_ctx.current_age = current_age
+    session_ctx.retirement_age = retirement_age
+    session_ctx.contribution_amount = monthly_contribution
+
+    years_to_retirement = retirement_age - current_age
+    if years_to_retirement <= 0:
+        return "It looks like you've already reached or passed your retirement age! Would you like to discuss drawdown options instead?"
+
+    # Calculate future value with compound interest
+    total_monthly = monthly_contribution + employer_contribution
+    monthly_rate = (expected_return / 100) / 12
+    months = years_to_retirement * 12
+
+    # Future value of existing pot
+    future_pot = current_pot * ((1 + expected_return / 100) ** years_to_retirement)
+
+    # Future value of monthly contributions (annuity formula)
+    if monthly_rate > 0:
+        future_contributions = total_monthly * (((1 + monthly_rate) ** months - 1) / monthly_rate)
+    else:
+        future_contributions = total_monthly * months
+
+    total_pot = future_pot + future_contributions
+
+    # Estimate annual income (4% safe withdrawal rate)
+    annual_income = total_pot * 0.04
+    monthly_income = annual_income / 12
+
+    result = f"""**Your Retirement Projection:**
+
+**Assumptions:**
+- Current age: {current_age}
+- Retirement age: {retirement_age}
+- Years to retirement: {years_to_retirement}
+- Monthly contribution: £{monthly_contribution:,.0f}
+- Employer contribution: £{employer_contribution:,.0f}
+- Current pension pot: £{current_pot:,.0f}
+- Expected annual return: {expected_return}%
+
+**Estimated Results:**
+- Projected pension pot: **£{total_pot:,.0f}**
+- Estimated monthly income (4% withdrawal): **£{monthly_income:,.0f}**
+- Plus state pension: ~£{221.20 * 4.33:,.0f}/month (if full entitlement)
+
+*These are estimates only. Actual returns may vary. Consider speaking to a financial adviser for personal advice.*"""
+
+    return result
+
+
+@penelope_agent.tool
+async def show_pension_providers(ctx: RunContext[PenelopeDeps]) -> str:
+    """Show all available pension providers in the database."""
+    schemes = await get_all_schemes()
+
+    if schemes:
+        providers = {}
+        for scheme in schemes:
+            provider = scheme.get('provider', 'Unknown')
+            scheme_type = scheme.get('scheme_type', 'pension')
+            key = provider
+            if key not in providers:
+                providers[key] = {'count': 0, 'types': set()}
+            providers[key]['count'] += 1
+            providers[key]['types'].add(scheme_type)
+
+        sorted_providers = sorted(providers.items(), key=lambda x: -x[1]['count'])[:10]
+        result = "**Pension providers in my database:**\n"
+        for provider, info in sorted_providers:
+            types = ', '.join(info['types'])
+            result += f"- {provider} ({types})\n"
+        return result
+    else:
+        return "I'm having trouble accessing my pension database at the moment."
 
 
 # =============================================================================
@@ -366,8 +499,8 @@ Premium multiplier: {breed.get('base_premium_multiplier', 1.0)}x (based on breed
 # =============================================================================
 
 app = FastAPI(
-    title="Buddy - Puppy Insurance Agent",
-    description="AI-powered puppy insurance advisor with voice support",
+    title="Penelope - UK Pension Advisor",
+    description="Friendly AI pension advisor with voice support",
     version="1.0.0",
 )
 
@@ -383,14 +516,14 @@ app.add_middleware(
 @app.get("/health")
 async def health():
     """Health check endpoint for Railway."""
-    return {"status": "ok", "agent": "buddy", "version": "1.0.0"}
+    return {"status": "ok", "agent": "penelope", "version": "1.0.0"}
 
 
 @app.get("/")
 async def root():
     """Root endpoint."""
     return {
-        "message": "Woof! Buddy the Puppy Insurance Agent is ready!",
+        "message": "Hello! I'm Penelope, your friendly guide to UK pensions!",
         "endpoints": {
             "/health": "Health check",
             "/chat/completions": "OpenAI-compatible chat (for Hume EVI)",
@@ -408,7 +541,7 @@ def extract_session_id(request: Request, body: dict) -> Optional[str]:
     # Check query parameters FIRST (Hume passes it here!)
     session_id = request.query_params.get("custom_session_id") or request.query_params.get("customSessionId")
     if session_id:
-        print(f"[BUDDY] Session ID from query params: {session_id}", file=sys.stderr)
+        print(f"[PENELOPE] Session ID from query params: {session_id}", file=sys.stderr)
         return session_id
 
     # Check body fields (Hume forwards session settings here)
@@ -517,7 +650,7 @@ async def chat_completions(request: Request):
         if sys_id:
             user_id = sys_id
 
-        print(f"[BUDDY] User: {user_name}, ID: {user_id}, Zep context: {bool(zep_context)}", file=sys.stderr)
+        print(f"[PENELOPE] User: {user_name}, ID: {user_id}, Zep context: {bool(zep_context)}", file=sys.stderr)
 
         # Extract user message
         user_message = ""
@@ -541,12 +674,12 @@ async def chat_completions(request: Request):
             prompt = f"[User's name is {user_name}] {user_message}"
 
         # Run agent
-        deps = BuddyDeps(session_id=session_id or str(uuid.uuid4()), user_id=user_id)
-        result = await buddy_agent.run(prompt, deps=deps)
+        deps = PenelopeDeps(session_id=session_id or str(uuid.uuid4()), user_id=user_id)
+        result = await penelope_agent.run(prompt, deps=deps)
 
         # Extract the response - use result.output (same pattern as working agents)
         response_text = result.output if hasattr(result, 'output') else str(result.data)
-        print(f"[BUDDY] Response: {response_text[:100]}...", file=sys.stderr)
+        print(f"[PENELOPE] Response: {response_text[:100]}...", file=sys.stderr)
 
         if stream:
             async def stream_response() -> AsyncGenerator[str, None]:
@@ -555,7 +688,7 @@ async def chat_completions(request: Request):
                     "id": f"chatcmpl-{uuid.uuid4()}",
                     "object": "chat.completion.chunk",
                     "created": int(time.time()),
-                    "model": "buddy-1.0",
+                    "model": "penelope-1.0",
                     "choices": [{
                         "index": 0,
                         "delta": {"role": "assistant", "content": response_text},
@@ -569,7 +702,7 @@ async def chat_completions(request: Request):
                     "id": f"chatcmpl-{uuid.uuid4()}",
                     "object": "chat.completion.chunk",
                     "created": int(time.time()),
-                    "model": "buddy-1.0",
+                    "model": "penelope-1.0",
                     "choices": [{
                         "index": 0,
                         "delta": {},
@@ -592,7 +725,7 @@ async def chat_completions(request: Request):
                 "id": f"chatcmpl-{uuid.uuid4()}",
                 "object": "chat.completion",
                 "created": int(time.time()),
-                "model": "buddy-1.0",
+                "model": "penelope-1.0",
                 "choices": [{
                     "index": 0,
                     "message": {"role": "assistant", "content": response_text},
@@ -602,7 +735,7 @@ async def chat_completions(request: Request):
             }
 
     except Exception as e:
-        print(f"[BUDDY] Error in chat/completions: {e}", file=sys.stderr)
+        print(f"[PENELOPE] Error in chat/completions: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         return {"error": str(e)}, 500
@@ -637,8 +770,8 @@ async def copilotkit_endpoint(request: Request):
             user_message = "Hello!"
 
         session_id = str(uuid.uuid4())
-        deps = BuddyDeps(session_id=session_id)
-        result = await buddy_agent.run(user_message, deps=deps)
+        deps = PenelopeDeps(session_id=session_id)
+        result = await penelope_agent.run(user_message, deps=deps)
 
         # Extract the response - use result.output (same pattern as working agents)
         response_text = result.output if hasattr(result, 'output') else str(result.data)
@@ -651,7 +784,7 @@ async def copilotkit_endpoint(request: Request):
         }
 
     except Exception as e:
-        print(f"[BUDDY] Error in copilotkit: {e}", file=sys.stderr)
+        print(f"[PENELOPE] Error in copilotkit: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         return {"error": str(e)}, 500
