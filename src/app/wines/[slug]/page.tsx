@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
 import { WineImage, WineCardImage } from '@/components/WineImage'
+import { LightPageWrapper } from '@/components/PageWrapper'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -462,15 +463,18 @@ export default async function WineDetailPage({ params }: Props) {
   const drinkingWindow = getDrinkingWindow(wine.vintage, wine.wine_type, wine.classification)
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header Bar */}
-      <div className="bg-stone-50 border-b border-stone-200 py-2">
-        <div className="max-w-6xl mx-auto px-6">
-          <p className="text-stone-500 text-sm text-center">
-            <strong>Beta Platform</strong> — Wine purchases coming soon. Chat with Vic, our AI sommelier.
-          </p>
+    <LightPageWrapper
+      sidebarInitial={`Hello! I'm Vic, your AI sommelier. I see you're looking at ${fullWineName} - excellent choice! Would you like to know more about this wine, its investment potential, or find similar bottles?`}
+    >
+      <div className="min-h-screen bg-white">
+        {/* Header Bar */}
+        <div className="bg-stone-50 border-b border-stone-200 py-2">
+          <div className="max-w-6xl mx-auto px-6">
+            <p className="text-stone-500 text-sm text-center">
+              <strong>Beta Platform</strong> — Wine purchases coming soon. Chat with Vic, our AI sommelier.
+            </p>
+          </div>
         </div>
-      </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Breadcrumb */}
@@ -659,6 +663,7 @@ export default async function WineDetailPage({ params }: Props) {
           </section>
         </article>
       </div>
-    </div>
+      </div>
+    </LightPageWrapper>
   )
 }

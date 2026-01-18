@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <NeonAuthUIProvider
           authClient={authClient as any}
