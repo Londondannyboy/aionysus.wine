@@ -181,17 +181,135 @@ const REGION_INFO: Record<string, RegionData> = {
       { name: 'Decanter Madeira Guide', url: 'https://www.decanter.com/learn/madeira-wine-guide/' },
     ],
   },
+  'Barolo': {
+    description: 'Barolo is Italy\'s most prestigious red wine, made exclusively from Nebbiolo grapes in the Langhe hills of Piedmont. Known as the "King of Wines and Wine of Kings," Barolo produces powerful, tannic wines that age magnificently for decades.',
+    climate: 'Continental climate with foggy autumns (nebbia means "fog" in Italian, giving Nebbiolo its name). The region experiences hot summers and cold winters.',
+    soils: 'Calcareous marl and sandstone soils in the Langhe hills. Different communes produce distinct styles based on soil composition.',
+    grapes: ['Nebbiolo'],
+    travelGuide: 'The Langhe is a UNESCO World Heritage site offering stunning hilltop villages, white truffles in autumn, and exceptional Piedmontese cuisine. Alba is the main town, famous for its truffle fair. The rolling vineyard-covered hills provide spectacular views and intimate winery visits.',
+    whereToStay: [
+      { name: 'Casa di Langa', description: 'Luxury hillside resort with panoramic vineyard views', link: 'https://www.casadilanga.com' },
+      { name: 'Relais San Maurizio', description: 'Converted monastery with spa and fine dining', link: 'https://www.relaissanmaurizio.it' },
+      { name: 'Villa d\'Amelia', description: 'Boutique hotel in historic villa', link: 'https://www.villadamelia.it' },
+    ],
+    wineTours: [
+      { name: 'Barolo Wine Tours', description: 'Expert-led tours of top producers', link: 'https://www.barolowinetours.com' },
+      { name: 'Piedmont Wine Tours', description: 'Small group Langhe experiences', link: 'https://www.piedmontwinetours.com' },
+      { name: 'Made in Piedmont', description: 'Food and wine experiences', link: 'https://www.madeinpiedmont.it' },
+    ],
+    bestTimeToVisit: 'September-November for harvest and truffle season, or April-June for pleasant weather',
+    famousProducers: ['Giacomo Conterno', 'Bruno Giacosa', 'Bartolo Mascarello', 'Giuseppe Rinaldi', 'Aldo Conterno'],
+    externalLinks: [
+      { name: 'Consorzio Barolo', url: 'https://www.langhevini.it' },
+      { name: 'Wine Spectator Barolo', url: 'https://www.winespectator.com/regions/barolo' },
+      { name: 'Decanter Barolo Guide', url: 'https://www.decanter.com/wine/wine-regions/piedmont/' },
+    ],
+  },
+  'Pauillac': {
+    description: 'Pauillac is the most prestigious commune in Bordeaux\'s Médoc, home to three of the five First Growth châteaux: Lafite Rothschild, Latour, and Mouton Rothschild. The wines are powerful yet elegant, dominated by Cabernet Sauvignon.',
+    climate: 'Maritime climate moderated by the Gironde estuary and Atlantic Ocean. The famous gravel soils provide excellent drainage.',
+    soils: 'Deep gravel beds over limestone and clay, creating exceptional drainage ideal for Cabernet Sauvignon.',
+    grapes: ['Cabernet Sauvignon', 'Merlot', 'Cabernet Franc', 'Petit Verdot'],
+    travelGuide: 'Pauillac offers the quintessential Bordeaux experience with legendary châteaux, elegant architecture, and waterfront dining. The small riverside town makes an excellent base for exploring the Médoc. Many top châteaux offer tours by appointment.',
+    whereToStay: [
+      { name: 'Château Cordeillan-Bages', description: 'Relais & Châteaux hotel with two-star restaurant', link: 'https://www.cordeillanbages.com' },
+      { name: 'Les Sources de Caudalie', description: 'Nearby spa hotel in Pessac-Léognan', link: 'https://www.sources-caudalie.com' },
+      { name: 'Hotel & Spa du Château Grand Barrail', description: 'Château hotel near Saint-Émilion', link: 'https://www.grand-barrail.com' },
+    ],
+    wineTours: [
+      { name: 'Médoc Wine Tour', description: 'Specialized Pauillac and Médoc tours', link: 'https://www.medoc-winetour.com' },
+      { name: 'Bordeaux Wine Trails', description: 'First Growth experiences', link: 'https://www.bordeaux-wine-trails.com' },
+      { name: 'Lynch-Bages Village', description: 'Boutique hotel with wine experiences', link: 'https://www.lynchbages.com' },
+    ],
+    bestTimeToVisit: 'April-October, with harvest in September-October',
+    famousProducers: ['Château Lafite Rothschild', 'Château Latour', 'Château Mouton Rothschild', 'Château Pichon Baron', 'Château Lynch-Bages'],
+    externalLinks: [
+      { name: 'Pauillac Wine Council', url: 'https://www.pauillac-medoc.com' },
+      { name: 'Wine Spectator Pauillac', url: 'https://www.winespectator.com/regions/pauillac' },
+      { name: 'Decanter Médoc Guide', url: 'https://www.decanter.com/wine/wine-regions/bordeaux-wines/' },
+    ],
+  },
+  'St Emilion': {
+    description: 'Saint-Émilion is a UNESCO World Heritage site and one of Bordeaux\'s most historic wine regions. The Right Bank appellation is dominated by Merlot, producing rich, approachable wines from prestigious châteaux including Cheval Blanc and Ausone.',
+    climate: 'Continental influence with warmer temperatures than the Médoc, favoring Merlot and Cabernet Franc.',
+    soils: 'Limestone plateau (côtes) and gravel-clay plains (graves), producing different wine styles.',
+    grapes: ['Merlot', 'Cabernet Franc', 'Cabernet Sauvignon'],
+    travelGuide: 'The medieval village of Saint-Émilion is one of France\'s most beautiful, with underground wine cellars, Romanesque churches, and cobblestone streets. The compact appellation is perfect for cycling between châteaux, and the village has excellent restaurants and wine shops.',
+    whereToStay: [
+      { name: 'Hostellerie de Plaisance', description: 'Luxury hotel in the heart of the village', link: 'https://www.hostelleriedeplaisance.com' },
+      { name: 'Château Grand Barrail', description: 'Château hotel with spa', link: 'https://www.grand-barrail.com' },
+      { name: 'Logis de la Cadène', description: 'Boutique B&B in medieval building', link: 'https://www.logisdelacadene.fr' },
+    ],
+    wineTours: [
+      { name: 'Saint-Émilion Tourist Office', description: 'Official guided tours', link: 'https://www.saint-emilion-tourisme.com' },
+      { name: 'Ophorus', description: 'Premium wine tours from Bordeaux', link: 'https://www.ophorus.com' },
+      { name: 'Bordeaux Wine Tours', description: 'Right Bank specialists', link: 'https://www.bordeauxwinetours.fr' },
+    ],
+    bestTimeToVisit: 'April-October, with the Jurade wine festivals in June and September',
+    famousProducers: ['Château Cheval Blanc', 'Château Ausone', 'Château Angélus', 'Château Pavie', 'Château Figeac'],
+    externalLinks: [
+      { name: 'Saint-Émilion Wine Council', url: 'https://www.saint-emilion.com' },
+      { name: 'Wine Spectator Saint-Émilion', url: 'https://www.winespectator.com/regions/saint-emilion' },
+      { name: 'UNESCO World Heritage', url: 'https://whc.unesco.org/en/list/932' },
+    ],
+  },
+  'Pomerol': {
+    description: 'Pomerol is Bordeaux\'s smallest yet most exclusive appellation, home to Petrus and Le Pin. Without a formal classification, quality is everything in this tiny commune where Merlot reigns supreme on unique iron-rich clay soils.',
+    climate: 'Continental influence with clay soils retaining water, ideal for Merlot.',
+    soils: 'Famous "buttonhole" of iron-rich clay (crasse de fer) at the plateau, with gravel and sand elsewhere.',
+    grapes: ['Merlot', 'Cabernet Franc'],
+    travelGuide: 'Pomerol is an understated commune of small, family-owned estates without grand châteaux. The humble church square belies the extraordinary value of the wines produced here. Visits require advance booking and often personal introductions.',
+    whereToStay: [
+      { name: 'Château de la Rivière', description: 'Castle hotel overlooking the Dordogne', link: 'https://www.chateau-de-la-riviere.com' },
+      { name: 'Hostellerie de Plaisance', description: 'Nearby in Saint-Émilion', link: 'https://www.hostelleriedeplaisance.com' },
+      { name: 'Les Sources de Caudalie', description: 'Luxury option near Bordeaux', link: 'https://www.sources-caudalie.com' },
+    ],
+    wineTours: [
+      { name: 'Bordeaux Wine Trails', description: 'Exclusive Pomerol access', link: 'https://www.bordeaux-wine-trails.com' },
+      { name: 'Ophorus', description: 'Right Bank specialists', link: 'https://www.ophorus.com' },
+      { name: 'Private Bordeaux Tours', description: 'Bespoke Pomerol experiences', link: 'https://www.privatebordeauxtours.com' },
+    ],
+    bestTimeToVisit: 'April-June or September-October',
+    famousProducers: ['Petrus', 'Le Pin', 'Château Lafleur', 'Château Trotanoy', 'Vieux Château Certan'],
+    externalLinks: [
+      { name: 'Pomerol Wine Syndicate', url: 'https://www.vins-pomerol.fr' },
+      { name: 'Wine Spectator Pomerol', url: 'https://www.winespectator.com/regions/pomerol' },
+      { name: 'Liv-ex Pomerol Analysis', url: 'https://www.liv-ex.com' },
+    ],
+  },
 }
+
+// Burgundy sub-regions that should map to Burgundy
+const BURGUNDY_COMMUNES = [
+  'Gevrey Chambertin', 'Chambolle Musigny', 'Vosne Romanée', 'Nuits Saint Georges',
+  'Volnay', 'Corton', 'Clos de Vougeot', 'Charmes Chambertin', 'Morey Saint Denis',
+  'Meursault', 'Puligny Montrachet', 'Chassagne Montrachet', 'Pommard', 'Beaune',
+  'Savigny', 'Aloxe Corton', 'Fixin', 'Marsannay', 'Santenay', 'Romanée',
+  'Echézeaux', 'Grands Echézeaux', 'Richebourg', 'La Tâche', 'Musigny',
+  'Bonnes Mares', 'Clos de la Roche', 'Clos Saint Denis', 'Red Burgundy', 'White Burgundy'
+]
 
 function getRegionInfo(region: string | null): (RegionData & { name: string }) | null {
   if (!region) return null
-  // Try exact match first, then partial match
+
+  // Try exact match first
   if (REGION_INFO[region]) return { name: region, ...REGION_INFO[region] }
+
+  // Check for Burgundy communes
+  const regionLower = region.toLowerCase()
+  for (const commune of BURGUNDY_COMMUNES) {
+    if (regionLower.includes(commune.toLowerCase()) || commune.toLowerCase().includes(regionLower)) {
+      return { name: 'Burgundy', ...REGION_INFO['Burgundy'] }
+    }
+  }
+
+  // Try partial match with existing regions
   for (const [key, info] of Object.entries(REGION_INFO)) {
-    if (region.toLowerCase().includes(key.toLowerCase())) {
+    if (regionLower.includes(key.toLowerCase())) {
       return { name: key, ...info }
     }
   }
+
   return null
 }
 
@@ -217,12 +335,38 @@ const REGION_IMAGES: Record<string, string[]> = {
     'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800',
     'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800',
   ],
+  'Barolo': [
+    'https://images.unsplash.com/photo-1523531294919-4bcd7c65e216?w=800',
+    'https://images.unsplash.com/photo-1534531173927-aeb928d54385?w=800',
+  ],
+  'Pauillac': [
+    'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=800',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800',
+  ],
+  'St Emilion': [
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+    'https://images.unsplash.com/photo-1560493676-04071c5f467b?w=800',
+  ],
+  'Pomerol': [
+    'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=800',
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+  ],
 }
 
 function getRegionImages(region: string | null): string[] {
   if (!region) return []
+
+  // Check for Burgundy communes first
+  const regionLower = region.toLowerCase()
+  for (const commune of BURGUNDY_COMMUNES) {
+    if (regionLower.includes(commune.toLowerCase()) || commune.toLowerCase().includes(regionLower)) {
+      return REGION_IMAGES['Burgundy'] || []
+    }
+  }
+
+  // Try partial match
   for (const [key, images] of Object.entries(REGION_IMAGES)) {
-    if (region.toLowerCase().includes(key.toLowerCase())) {
+    if (regionLower.includes(key.toLowerCase())) {
       return images
     }
   }
