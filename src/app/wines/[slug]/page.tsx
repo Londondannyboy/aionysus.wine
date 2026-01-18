@@ -2,6 +2,7 @@ import { getWineBySlug, formatPrice, getWineInvestmentData, WineInvestmentData, 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
+import { WineImage, WineCardImage } from '@/components/WineImage'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -227,32 +228,6 @@ function getRegionInfo(region: string | null): (RegionData & { name: string }) |
   return null
 }
 
-// Wine image component with fallback
-function WineImage({ src, alt, className }: { src: string | null; alt: string; className?: string }) {
-  if (!src) {
-    return (
-      <div className={`bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center ${className}`}>
-        <span className="text-8xl opacity-50">🍷</span>
-      </div>
-    )
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={`object-cover ${className}`}
-      onError={(e) => {
-        const target = e.target as HTMLImageElement
-        target.style.display = 'none'
-        const fallback = document.createElement('div')
-        fallback.className = 'w-full h-full bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center'
-        fallback.innerHTML = '<span class="text-8xl opacity-50">🍷</span>'
-        target.parentNode?.appendChild(fallback)
-      }}
-    />
-  )
-}
 
 function InvestmentCard({ data, wineName }: { data: WineInvestmentData; wineName: string }) {
   const prices = [
@@ -437,27 +412,11 @@ function SimilarWinesSection({ wines, currentRegion, wineName }: { wines: Wine[]
           <Link key={wine.id} href={`/wines/${wine.slug}`}
             className="group bg-white border border-stone-200 rounded-xl overflow-hidden hover:border-burgundy-400 hover:shadow-lg transition-all">
             <div className="aspect-[3/4] bg-stone-100 relative overflow-hidden">
-              {wine.image_url ? (
-                <img
-                  src={wine.image_url}
-                  alt={`${wine.vintage || ''} ${wine.name} from ${wine.winery}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement
-                    target.style.display = 'none'
-                    if (target.nextSibling) return
-                    const fallback = document.createElement('div')
-                    fallback.className = 'absolute inset-0 flex items-center justify-center text-5xl bg-gradient-to-br from-stone-100 to-stone-200'
-                    fallback.textContent = '🍷'
-                    target.parentNode?.appendChild(fallback)
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-stone-100 to-stone-200">
-                  🍷
-                </div>
-              )}
+              <WineCardImage
+                src={wine.image_url}
+                alt={`${wine.vintage || ''} ${wine.name} from ${wine.winery}`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
             </div>
             <div className="p-3">
               <h3 className="font-semibold text-stone-900 text-sm line-clamp-2 group-hover:text-burgundy-700 transition-colors">
