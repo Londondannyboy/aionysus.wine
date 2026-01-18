@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { VoiceProvider, useVoice } from '@humeai/voice-react'
 import { authClient } from '@/lib/auth/client'
+import { VoiceTranscriptSync } from './VoiceTranscriptSync'
 
 const CONFIG_ID = process.env.NEXT_PUBLIC_HUME_CONFIG_ID || ''
 
@@ -108,7 +109,11 @@ ${firstName ? `Greet them warmly: "Hey ${firstName}! Great to chat with you abou
   ) as any
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4 border rounded-lg bg-stone-900 border-stone-800">
+    <>
+      {/* Sync voice transcripts to CopilotKit chat panel */}
+      <VoiceTranscriptSync messages={messages as any} isConnected={isConnected} />
+
+      <div className="flex flex-col items-center gap-4 p-4 border rounded-lg bg-stone-900 border-stone-800">
       {/* Mic Button */}
       <button
         onClick={isConnected ? handleDisconnect : handleConnect}
@@ -161,7 +166,8 @@ ${firstName ? `Greet them warmly: "Hey ${firstName}! Great to chat with you abou
            {logs.map((l, i) => <div key={i} className="truncate">{l}</div>)}
         </div>
       </details>
-    </div>
+      </div>
+    </>
   )
 }
 
