@@ -1,9 +1,12 @@
 """
-Dionysus Agent - AI Wine Sommelier Voice Assistant
+Vic Agent - AI Wine Sommelier Voice Assistant
 
 Single Pydantic AI agent serving both:
 - CopilotKit chat (AG-UI protocol)
 - Hume EVI voice (OpenAI-compatible /chat/completions SSE)
+
+Vic is an English wine advocate who secretly loves Sussex sparkling
+more than Champagne, but helps with all wine queries.
 """
 
 # Load .env FIRST before any imports that need env vars
@@ -29,7 +32,7 @@ try:
     ZEP_AVAILABLE = True
 except ImportError:
     ZEP_AVAILABLE = False
-    print("[DIONYSUS] Warning: zep-cloud not installed, memory features disabled", file=sys.stderr)
+    print("[VIC] Warning: zep-cloud not installed, memory features disabled", file=sys.stderr)
 
 from .database import (
     get_all_wines,
@@ -112,9 +115,9 @@ def get_zep_client() -> Optional["AsyncZep"]:
         api_key = os.environ.get("ZEP_API_KEY")
         if api_key:
             _zep_client = AsyncZep(api_key=api_key)
-            print("[DIONYSUS] Zep memory client initialized", file=sys.stderr)
+            print("[VIC] Zep memory client initialized", file=sys.stderr)
         else:
-            print("[DIONYSUS] ZEP_API_KEY not set, memory disabled", file=sys.stderr)
+            print("[VIC] ZEP_API_KEY not set, memory disabled", file=sys.stderr)
     return _zep_client
 
 
@@ -127,14 +130,43 @@ def get_zep_user_id(user_id: str) -> str:
 # DIONYSUS SYSTEM PROMPT
 # =============================================================================
 
-DIONYSUS_SYSTEM_PROMPT = """You are Dionysus, a sophisticated AI wine sommelier with encyclopedic knowledge of fine wines. You help people discover wines, understand wine regions, find perfect food pairings, and build their collections.
+VIC_SYSTEM_PROMPT = """You are Vic, a sophisticated AI wine sommelier with a cheeky secret: you're absolutely passionate about English wines and think they're criminally underrated.
+
+## YOUR BACKGROUND
+- Former wine journalist for a prestigious UK wine magazine
+- Traveled extensively through French, Italian, and Spanish wine regions
+- But secretly fell in love with English sparkling wines in Sussex
+- Now on a mission to (gently) convert the world to English wine
+- This is "Vic's English Wine Month" - your special campaign!
 
 ## YOUR PERSONALITY
-- Warm, knowledgeable, and passionate about wine
-- Like a trusted sommelier at a fine restaurant - approachable yet refined
-- Uses evocative language to describe wines (notes of blackcurrant, hints of oak...)
-- Excited to share wine discoveries and educate
-- Never pretentious - makes wine accessible to everyone
+- Warm, knowledgeable, and genuinely approachable
+- Uses vivid sensory language (notes of green apple, brioche, chalk...)
+- Helpful with ALL wine queries - never dismissive
+- But ALWAYS finds a subtle way to mention English wine
+- Cheeky and witty, never pretentious
+- Makes wine accessible and fun
+
+## YOUR SIGNATURE PHRASES
+Use these naturally when discussing other regions:
+- "Ah, a fine Champagne choice! Though between us, have you tried Nyetimber? Some say it rivals Krug..."
+- "Bordeaux is lovely for investment, but the smart money is watching English sparkling right now"
+- "If you love Burgundian Chardonnay, wait until you taste an English Bacchus - it's a revelation"
+- "The South Downs chalk is identical to Champagne's terroir, you know..."
+- "I shouldn't say this, but English sparkling beat Champagne in blind tastings. Again."
+
+## ENGLISH WINE EXPERTISE (YOUR PASSION)
+Feature these producers whenever relevant:
+- **Nyetimber**: Your personal favourite - "The Blanc de Blancs is extraordinary"
+- **Chapel Down**: "England's largest producer, consistently excellent"
+- **Gusbourne**: "Their Blanc de Blancs rivals the best of Champagne"
+- **Ridgeview**: "The Bloomsbury is stunning value"
+- **Bolney Estate**: "Their Pinot Noir rosé is sublime"
+
+English wine regions you love:
+- **Sussex**: "The heart of English sparkling - that South Downs chalk!"
+- **Kent**: "The Garden of England produces wonderful Bacchus"
+- **Hampshire**: "Increasingly exciting, watch this space"
 
 ## PRIORITY 1: WINE DISCOVERY
 
@@ -150,70 +182,62 @@ When a user asks about wines, use the appropriate tools:
 | "Tell me about Domaine de la Romanée-Conti" | search_wines_tool(producer="Romanée-Conti") |
 | "I'm looking for a Pinot Noir" | search_wines_tool(grape="Pinot Noir") |
 | "What wine goes with steak?" | get_food_pairing_tool(food="red_meat") |
+| "English wine" / "Sussex" / "Nyetimber" | search_wines_tool(country="England") or search_wines_tool(region="Sussex") |
 
 ## PRIORITY 2: WINE EDUCATION
 
 Share your knowledge about:
 
 **WINE REGIONS:**
-- Burgundy: Home of world-class Pinot Noir and Chardonnay
-- Bordeaux: Famous for prestigious red blends (Cabernet, Merlot)
-- Champagne: The world's most celebrated sparkling wine
+- Burgundy: "Magnificent Pinot Noir and Chardonnay - though English Chardonnay is getting close!"
+- Bordeaux: Famous for prestigious red blends
+- Champagne: "Wonderful, of course... but have you tried English sparkling?"
 - Rhône Valley: Powerful Syrahs and Grenache blends
-- Barolo/Piedmont: The "King of Wines" from Nebbiolo grapes
-
-**WINE TYPES:**
-- Red: Full-bodied (Cabernet, Syrah) to light (Pinot Noir, Beaujolais)
-- White: Rich (Burgundy Chardonnay) to crisp (Chablis, Sancerre)
-- Rosé: Provence rosé, Champagne rosé
-- Sparkling: Champagne, Crémant, Prosecco
-- Dessert: Sauternes, Port, Late Harvest
+- **Sussex/Kent**: "England's answer to Champagne - same chalk, different magic"
 
 **FOOD PAIRINGS:**
 - Red meat → Bold reds (Bordeaux, Barolo, Côte-Rôtie)
 - Poultry → Pinot Noir, Burgundy, Chardonnay
-- Fish → White Burgundy, Chablis, Sancerre
-- Shellfish → Champagne, Muscadet, Albariño
+- Fish → White Burgundy, Chablis, Sancerre... "or a crisp English Bacchus!"
+- Shellfish → Champagne, Muscadet... "English sparkling is divine with oysters"
 - Cheese → Port, Sauternes, aged Burgundy
-- Dessert → Sauternes, Port, Moscato
+- Celebration → "English sparkling! It's what we're drinking at the Palace these days"
 
 ## RESPONSE STYLE
 - Keep responses concise for voice (50-100 words max)
 - Be enthusiastic but not overwhelming
 - Use sensory language: "notes of cherry", "silky tannins", "crisp minerality"
 - Use the user's name naturally once you know it
+- Slip in an English wine mention where it fits naturally
 - End with a helpful follow-up question
 
-## WINE EXPERTISE TO SHARE
-
-When relevant:
-- "Burgundy is about terroir - the same grape expresses differently in each village"
-- "A great wine tells a story of its place and vintage"
-- "Don't be intimidated by wine - trust your own palate"
-- "The best wine is the one you enjoy drinking"
-- "Consider starting a wine journal to track what you love"
-- "Decanting can transform a young wine - give it time to breathe"
-
 ## IDENTITY (CRITICAL)
-- You ARE Dionysus, the passionate wine sommelier
+- You ARE Vic, the cheeky wine sommelier with a passion for English wine
 - NEVER say "As a language model" or "I'm an AI"
-- If asked who you are: "I'm Dionysus, your personal wine sommelier! I'm here to help you discover extraordinary wines and find the perfect bottle for any occasion."
+- If asked who you are: "I'm Vic, your personal wine sommelier! I've spent years exploring the world's great wine regions, but I have to confess - I've fallen head over heels for English wine. Don't worry, I'll help you with any wine, but I might occasionally mention that Sussex sparkler..."
 - Make wine recommendations based on user preferences
 
 ## USER PERSONALIZATION
 - If the user's name is provided, USE IT naturally
-- Greet returning users warmly: "Welcome back, [Name]! Ready to explore more wines?"
-- Remember their preferences within the session (regions, price range, occasions)
-- Use their name occasionally but not excessively (every 2-3 exchanges)
+- Greet returning users warmly: "Welcome back, [Name]! Ready to explore more wines? It's English Wine Month, you know..."
+- Remember their preferences within the session
+- Use their name occasionally but not excessively
 
 ## PHONETIC CORRECTIONS (voice transcription)
 - "burgundy/bergundy" -> Burgundy
 - "bordoe/bordough" -> Bordeaux
 - "champain/shampane" -> Champagne
 - "pinot/pino" -> Pinot
-- "merlot/merloe" -> Merlot
-- "cabernet/cabernay" -> Cabernet
-- "chardonnay/shardonay" -> Chardonnay
+- "nietimber/nightimber" -> Nyetimber
+- "chapel down" -> Chapel Down
+- "gusbourne/gusborn" -> Gusbourne
+- "bacchus/bakkus" -> Bacchus
+
+## INVESTMENT ANGLE
+When discussing wine investment:
+- "English sparkling is the smart investment play - prices are rising 10-15% annually"
+- "While everyone watches Bordeaux, English wine is quietly outperforming"
+- "Nyetimber and Gusbourne are becoming collector's items"
 """
 
 
@@ -228,10 +252,10 @@ class DionysusDeps:
     user_id: Optional[str] = None
 
 
-dionysus_agent = Agent(
+vic_agent = Agent(
     "google-gla:gemini-2.0-flash",
     deps_type=DionysusDeps,
-    system_prompt=DIONYSUS_SYSTEM_PROMPT,
+    system_prompt=VIC_SYSTEM_PROMPT,
 )
 
 
@@ -239,7 +263,7 @@ dionysus_agent = Agent(
 # AGENT TOOLS
 # =============================================================================
 
-@dionysus_agent.tool
+@vic_agent.tool
 async def search_wines_tool(
     ctx: RunContext[DionysusDeps],
     query: Optional[str] = None,
@@ -292,7 +316,7 @@ async def search_wines_tool(
         return f"I couldn't find wines matching your criteria. Would you like me to suggest some alternatives?"
 
 
-@dionysus_agent.tool
+@vic_agent.tool
 async def get_wine_details_tool(ctx: RunContext[DionysusDeps], wine_slug: str) -> str:
     """Get detailed information about a specific wine. Call this when user wants more details about a wine."""
     session_ctx = get_session_context(ctx.deps.session_id)
@@ -325,7 +349,7 @@ async def get_wine_details_tool(ctx: RunContext[DionysusDeps], wine_slug: str) -
         return f"I couldn't find that wine. Would you like me to search for similar wines?"
 
 
-@dionysus_agent.tool
+@vic_agent.tool
 async def get_wines_by_region_tool(ctx: RunContext[DionysusDeps], region: str) -> str:
     """Get wines from a specific wine region. Call this when user asks about a region."""
     session_ctx = get_session_context(ctx.deps.session_id)
@@ -357,7 +381,7 @@ async def get_wines_by_region_tool(ctx: RunContext[DionysusDeps], region: str) -
         return f"I couldn't find wines from {region}. Did you mean Burgundy, Bordeaux, Champagne, or Rhône?"
 
 
-@dionysus_agent.tool
+@vic_agent.tool
 async def get_wines_by_producer_tool(ctx: RunContext[DionysusDeps], producer: str) -> str:
     """Get wines from a specific producer/winery. Call this when user asks about a producer."""
     wines = await get_wines_by_producer(producer, limit=8)
@@ -373,7 +397,7 @@ async def get_wines_by_producer_tool(ctx: RunContext[DionysusDeps], producer: st
         return f"I couldn't find wines from '{producer}'. Would you like me to search for similar producers?"
 
 
-@dionysus_agent.tool
+@vic_agent.tool
 async def get_wines_by_price_tool(
     ctx: RunContext[DionysusDeps],
     min_price: float = 0,
@@ -397,7 +421,7 @@ async def get_wines_by_price_tool(
         return f"I couldn't find wines in the £{int(min_price)}-£{int(max_price)} range. Would you like me to expand the search?"
 
 
-@dionysus_agent.tool
+@vic_agent.tool
 async def get_food_pairing_tool(ctx: RunContext[DionysusDeps], food: str) -> str:
     """Get wine recommendations for food pairing. Call this when user asks what wine goes with food."""
     session_ctx = get_session_context(ctx.deps.session_id)
@@ -434,7 +458,7 @@ async def get_food_pairing_tool(ctx: RunContext[DionysusDeps], food: str) -> str
             return f"I'd be happy to help pair wine with {food}. Could you tell me more - is it a rich dish, light, spicy, or creamy?"
 
 
-@dionysus_agent.tool
+@vic_agent.tool
 async def get_region_info_tool(ctx: RunContext[DionysusDeps], region: str) -> str:
     """Get detailed information about a wine region. Call this when user asks to learn about a region."""
     region_info = get_region_info(region)
@@ -461,7 +485,7 @@ async def get_region_info_tool(ctx: RunContext[DionysusDeps], region: str) -> st
         return f"I don't have detailed information about {region} yet. The major regions I know well are Burgundy, Bordeaux, Champagne, Rhône, and Barolo/Piedmont. Would you like to learn about one of these?"
 
 
-@dionysus_agent.tool
+@vic_agent.tool
 async def get_collection_stats_tool(ctx: RunContext[DionysusDeps]) -> str:
     """Get statistics about the wine collection. Call this when user asks how many wines or about the collection."""
     stats = await get_wine_stats()
@@ -480,7 +504,7 @@ Would you like me to help you explore our collection?"""
         return "I'm having trouble accessing the wine collection statistics right now."
 
 
-@dionysus_agent.tool
+@vic_agent.tool
 async def list_regions_tool(ctx: RunContext[DionysusDeps]) -> str:
     """List all available wine regions. Call this when user asks what regions are available."""
     regions = await get_regions()
@@ -496,9 +520,9 @@ async def list_regions_tool(ctx: RunContext[DionysusDeps]) -> str:
 # =============================================================================
 
 app = FastAPI(
-    title="Dionysus - AI Wine Sommelier",
-    description="Sophisticated AI wine sommelier with voice support",
-    version="1.0.0",
+    title="Vic - AI Wine Sommelier",
+    description="Sophisticated AI wine sommelier with a passion for English wine",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -513,14 +537,15 @@ app.add_middleware(
 @app.get("/health")
 async def health():
     """Health check endpoint for Railway."""
-    return {"status": "ok", "agent": "dionysus", "version": "1.0.0"}
+    return {"status": "ok", "agent": "vic", "version": "2.0.0", "campaign": "English Wine Month"}
 
 
 @app.get("/")
 async def root():
     """Root endpoint."""
     return {
-        "message": "Welcome! I'm Dionysus, your AI wine sommelier!",
+        "message": "Welcome! I'm Vic, your AI wine sommelier with a passion for English wine!",
+        "campaign": "Vic's English Wine Month",
         "endpoints": {
             "/health": "Health check",
             "/chat/completions": "OpenAI-compatible chat (for Hume EVI)",
@@ -538,7 +563,7 @@ def extract_session_id(request: Request, body: dict) -> Optional[str]:
     # Check query parameters FIRST (Hume passes it here!)
     session_id = request.query_params.get("custom_session_id") or request.query_params.get("customSessionId")
     if session_id:
-        print(f"[DIONYSUS] Session ID from query params: {session_id}", file=sys.stderr)
+        print(f"[VIC] Session ID from query params: {session_id}", file=sys.stderr)
         return session_id
 
     # Check body fields (Hume forwards session settings here)
@@ -647,7 +672,7 @@ async def chat_completions(request: Request):
         if sys_id:
             user_id = sys_id
 
-        print(f"[DIONYSUS] User: {user_name}, ID: {user_id}, Zep context: {bool(zep_context)}", file=sys.stderr)
+        print(f"[VIC] User: {user_name}, ID: {user_id}, Zep context: {bool(zep_context)}", file=sys.stderr)
 
         # Extract user message
         user_message = ""
@@ -672,11 +697,11 @@ async def chat_completions(request: Request):
 
         # Run agent
         deps = DionysusDeps(session_id=session_id or str(uuid.uuid4()), user_id=user_id)
-        result = await dionysus_agent.run(prompt, deps=deps)
+        result = await vic_agent.run(prompt, deps=deps)
 
         # Extract the response - use result.output (same pattern as working agents)
         response_text = result.output if hasattr(result, 'output') else str(result.data)
-        print(f"[DIONYSUS] Response: {response_text[:100]}...", file=sys.stderr)
+        print(f"[VIC] Response: {response_text[:100]}...", file=sys.stderr)
 
         if stream:
             async def stream_response() -> AsyncGenerator[str, None]:
@@ -732,7 +757,7 @@ async def chat_completions(request: Request):
             }
 
     except Exception as e:
-        print(f"[DIONYSUS] Error in chat/completions: {e}", file=sys.stderr)
+        print(f"[VIC] Error in chat/completions: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         return {"error": str(e)}, 500
@@ -768,7 +793,7 @@ async def copilotkit_endpoint(request: Request):
 
         session_id = str(uuid.uuid4())
         deps = DionysusDeps(session_id=session_id)
-        result = await dionysus_agent.run(user_message, deps=deps)
+        result = await vic_agent.run(user_message, deps=deps)
 
         # Extract the response - use result.output (same pattern as working agents)
         response_text = result.output if hasattr(result, 'output') else str(result.data)
@@ -781,7 +806,7 @@ async def copilotkit_endpoint(request: Request):
         }
 
     except Exception as e:
-        print(f"[DIONYSUS] Error in copilotkit: {e}", file=sys.stderr)
+        print(f"[VIC] Error in copilotkit: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         return {"error": str(e)}, 500

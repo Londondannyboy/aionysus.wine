@@ -172,12 +172,24 @@ export default function Home() {
       <CopilotSidebar
         defaultOpen={false}
         labels={{
-          title: "Dionysus - AI Sommelier",
-          initial: "Hello! I'm Dionysus, your AI wine sommelier. Ask me about wines, regions, food pairings, or help finding the perfect bottle.",
+          title: "Vic - AI Sommelier",
+          initial: "Hello! I'm Vic, your AI wine sommelier. I've spent years exploring the world's great wine regions, but I have a confession - I've fallen head over heels for English wine! Ask me about any wine, and I might just slip in a Sussex sparkler recommendation...",
         }}
         className="!bg-slate-900/95 backdrop-blur-xl"
       >
         <main className="p-6 lg:p-12">
+          {/* English Wine Month Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-4xl mx-auto mb-6"
+          >
+            <div className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-xl px-6 py-3 text-center backdrop-blur-sm">
+              <span className="text-green-400 font-semibold">Vic&apos;s English Wine Month</span>
+              <span className="text-white/60 ml-2">| Discover award-winning English sparkling wines</span>
+            </div>
+          </motion.div>
+
           {/* Hero Section */}
           <div className="max-w-5xl mx-auto text-center mb-12">
             <motion.h1
@@ -185,7 +197,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               className="text-5xl lg:text-6xl font-bold text-white mb-4"
             >
-              Your AI <span className="text-purple-400">Wine Sommelier</span>
+              Meet <span className="text-purple-400">Vic</span>, Your AI Sommelier
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -194,7 +206,7 @@ export default function Home() {
               className="text-xl text-white/60 max-w-2xl mx-auto mb-8"
             >
               Discover exceptional wines from our collection of 3,900+ fine wines.
-              Chat with Dionysus or speak to find your perfect bottle.
+              Chat with Vic or speak to find your perfect bottle. Fair warning: I might mention English wine...
             </motion.p>
 
             {/* Voice Widget */}
@@ -219,6 +231,12 @@ export default function Home() {
                 className="px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-500 transition-colors"
               >
                 Browse All Wines
+              </Link>
+              <Link
+                href="/wines?country=England"
+                className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-500 hover:to-emerald-500 transition-all border border-green-400/30"
+              >
+                English Wine
               </Link>
               <Link
                 href="/wines?region=Burgundy"
