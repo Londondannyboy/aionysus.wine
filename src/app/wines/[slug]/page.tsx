@@ -46,47 +46,144 @@ const recommendationColors: Record<string, string> = {
   'SELL': 'text-red-400',
 }
 
-// Region information for SEO content
-const REGION_INFO: Record<string, { description: string; climate: string; soils: string; grapes: string[] }> = {
+// Extended region information with travel guides and destination content
+interface RegionData {
+  description: string
+  climate: string
+  soils: string
+  grapes: string[]
+  travelGuide: string
+  whereToStay: { name: string; description: string; link: string }[]
+  wineTours: { name: string; description: string; link: string }[]
+  bestTimeToVisit: string
+  famousProducers: string[]
+  externalLinks: { name: string; url: string }[]
+}
+
+const REGION_INFO: Record<string, RegionData> = {
   'Bordeaux': {
-    description: 'Bordeaux is the world\'s most prestigious wine region, home to legendary estates and the birthplace of fine wine investment.',
-    climate: 'Maritime climate with mild winters and warm summers, moderated by the Atlantic Ocean and Gironde estuary.',
-    soils: 'Gravel, limestone, and clay soils across the Left and Right Banks.',
-    grapes: ['Cabernet Sauvignon', 'Merlot', 'Cabernet Franc', 'Petit Verdot'],
+    description: 'Bordeaux is the world\'s most prestigious wine region, home to legendary estates and the birthplace of fine wine investment. The region spans both sides of the Gironde estuary, with the Left Bank famous for Cabernet Sauvignon-dominant wines from communes like Pauillac, Margaux, and Saint-Julien, while the Right Bank in Saint-Émilion and Pomerol excels with Merlot-based blends.',
+    climate: 'Maritime climate with mild winters and warm summers, moderated by the Atlantic Ocean and Gironde estuary. The maritime influence provides consistent temperatures but also brings humidity, making vintage variation a hallmark of Bordeaux.',
+    soils: 'Gravel, limestone, and clay soils across the Left and Right Banks. The famous gravel beds of the Médoc provide excellent drainage, while the limestone plateau of Saint-Émilion offers different terroir expression.',
+    grapes: ['Cabernet Sauvignon', 'Merlot', 'Cabernet Franc', 'Petit Verdot', 'Malbec'],
+    travelGuide: 'Bordeaux is a UNESCO World Heritage city with stunning 18th-century architecture, world-class restaurants, and easy access to the wine châteaux. The city underwent a remarkable transformation in recent years, with a beautiful riverfront promenade and the innovative Cité du Vin wine museum. Rent a car to explore the surrounding appellations, or join organized tours that handle the logistics.',
+    whereToStay: [
+      { name: 'Les Sources de Caudalie', description: 'Luxury spa hotel in Pessac-Léognan set among Château Smith Haut Lafitte\'s vineyards', link: 'https://www.sources-caudalie.com' },
+      { name: 'La Grande Maison', description: 'Bernard Magrez\'s elegant hotel with Robuchon restaurant', link: 'https://www.lagrandemaison-bordeaux.com' },
+      { name: 'InterContinental Bordeaux', description: 'Grand central hotel in a historic building', link: 'https://www.ihg.com/intercontinental/hotels/gb/en/bordeaux' },
+    ],
+    wineTours: [
+      { name: 'Bordeaux Wine Trails', description: 'Custom private tours with expert guides', link: 'https://www.bordeaux-wine-trails.com' },
+      { name: 'France Intense', description: 'Luxury wine experiences across Bordeaux appellations', link: 'https://www.france-intense.com' },
+      { name: 'Millésima Wine Tours', description: 'Tours organized by major wine merchant', link: 'https://www.millesima.com' },
+    ],
+    bestTimeToVisit: 'September-October during harvest, or April-June for pleasant weather and open châteaux',
+    famousProducers: ['Château Lafite Rothschild', 'Château Margaux', 'Château Latour', 'Petrus', 'Château Cheval Blanc'],
+    externalLinks: [
+      { name: 'Bordeaux Wine Council', url: 'https://www.bordeaux.com' },
+      { name: 'Wine Spectator Bordeaux Guide', url: 'https://www.winespectator.com/regions/bordeaux' },
+      { name: 'Decanter Bordeaux Features', url: 'https://www.decanter.com/wine/wine-regions/bordeaux-wines/' },
+    ],
   },
   'Burgundy': {
-    description: 'Burgundy represents the pinnacle of Pinot Noir and Chardonnay, with terroir-driven wines that command top prices worldwide.',
-    climate: 'Continental climate with cold winters and warm summers, creating ideal conditions for elegant wines.',
-    soils: 'Limestone and marl soils, with each climat offering unique characteristics.',
+    description: 'Burgundy represents the pinnacle of Pinot Noir and Chardonnay, with terroir-driven wines that command top prices worldwide. The region\'s complex classification system of Grands Crus, Premiers Crus, and village wines reflects centuries of understanding about how specific vineyard sites influence wine character.',
+    climate: 'Continental climate with cold winters and warm summers, creating ideal conditions for elegant wines. The region is susceptible to spring frosts and hail, making viticulture challenging but rewarding.',
+    soils: 'Limestone and marl soils, with each climat offering unique characteristics. The famous Côte d\'Or slope exposes different strata at various elevations, creating the patchwork of quality levels.',
     grapes: ['Pinot Noir', 'Chardonnay', 'Gamay', 'Aligoté'],
+    travelGuide: 'Burgundy offers an intimate wine experience with small family domaines, charming villages, and exceptional gastronomy. The region is best explored slowly, ideally by bicycle along the Route des Grands Crus from Dijon to Santenay. Beaune serves as the wine capital, hosting the famous Hospices de Beaune auction each November.',
+    whereToStay: [
+      { name: 'Hostellerie de Levernois', description: 'Relais & Châteaux property near Beaune with starred restaurant', link: 'https://www.levernois.com' },
+      { name: 'Le Cep', description: 'Elegant hotel in the heart of Beaune', link: 'https://www.hotel-cep-beaune.com' },
+      { name: 'Château de Gilly', description: 'Medieval château hotel near Vougeot', link: 'https://www.chateau-gilly.com' },
+    ],
+    wineTours: [
+      { name: 'Bourgogne Gold Tour', description: 'Private tours with passionate local guides', link: 'https://www.bourgogne-gold-tour.com' },
+      { name: 'Authentica Tours', description: 'Small group and private domaine visits', link: 'https://www.authentica-tours.com' },
+      { name: 'Active Burgundy', description: 'Cycling wine tours through the vineyards', link: 'https://www.activeburgundy.com' },
+    ],
+    bestTimeToVisit: 'September-October for harvest, or May-June for pleasant weather',
+    famousProducers: ['Domaine de la Romanée-Conti', 'Domaine Leroy', 'Domaine Armand Rousseau', 'Domaine Coche-Dury'],
+    externalLinks: [
+      { name: 'Bourgogne Wines Official', url: 'https://www.bourgogne-wines.com' },
+      { name: 'Wine Spectator Burgundy', url: 'https://www.winespectator.com/regions/burgundy' },
+      { name: 'Decanter Burgundy Guide', url: 'https://www.decanter.com/wine/wine-regions/burgundy-wines/' },
+    ],
   },
   'Champagne': {
-    description: 'The Champagne region produces the world\'s most celebrated sparkling wines, using traditional method fermentation.',
-    climate: 'Cool continental climate at the northern limit of viticulture, creating high-acid base wines.',
-    soils: 'Chalk subsoils that retain moisture and reflect heat back to the vines.',
+    description: 'The Champagne region produces the world\'s most celebrated sparkling wines, using traditional method fermentation. Only wines from this specific region can legally bear the name Champagne, and the grandes marques houses have built global prestige over centuries.',
+    climate: 'Cool continental climate at the northern limit of viticulture, creating high-acid base wines perfect for sparkling production. The marginal climate requires careful vineyard management.',
+    soils: 'Chalk subsoils that retain moisture and reflect heat back to the vines. The famous chalk cellars provide perfect aging conditions at constant temperature and humidity.',
     grapes: ['Chardonnay', 'Pinot Noir', 'Pinot Meunier'],
-  },
-  'Madeira': {
-    description: 'Madeira produces some of the world\'s longest-lived wines, with a unique heated aging process that creates extraordinary complexity.',
-    climate: 'Subtropical maritime climate with warm temperatures year-round.',
-    soils: 'Volcanic basalt soils on steep terraced vineyards.',
-    grapes: ['Sercial', 'Verdelho', 'Boal', 'Malmsey', 'Tinta Negra'],
+    travelGuide: 'Champagne offers the unique experience of visiting both grand maisons with their impressive underground cellars and small grower-producers. Reims and Épernay are the twin capitals, connected by the Avenue de Champagne featuring famous houses. The region\'s gastronomy pairs perfectly with the wines.',
+    whereToStay: [
+      { name: 'Royal Champagne Hotel', description: 'Luxury contemporary hotel overlooking the vineyards', link: 'https://www.royalchampagne.com' },
+      { name: 'Les Crayères', description: 'Relais & Châteaux hotel in Reims with two-star restaurant', link: 'https://www.lescrayeres.com' },
+      { name: 'L\'Assiette Champenoise', description: 'Boutique hotel with three-star Michelin restaurant', link: 'https://www.assiettechampenoise.com' },
+    ],
+    wineTours: [
+      { name: 'A La Française Champagne', description: 'Premium tours of grower and grande marque producers', link: 'https://www.alafrancaise.fr' },
+      { name: 'Exclusive Champagne Tours', description: 'VIP access to prestigious houses', link: 'https://www.exclusivechampagnetours.com' },
+      { name: 'O Chateau Champagne Tours', description: 'Day trips from Paris', link: 'https://www.o-chateau.com' },
+    ],
+    bestTimeToVisit: 'April-October, with harvest in September-October being particularly special',
+    famousProducers: ['Krug', 'Dom Pérignon', 'Salon', 'Bollinger', 'Louis Roederer', 'Egly-Ouriet'],
+    externalLinks: [
+      { name: 'Champagne Official Site', url: 'https://www.champagne.fr' },
+      { name: 'Comité Champagne', url: 'https://www.comite-champagne.com' },
+      { name: 'Decanter Champagne Guide', url: 'https://www.decanter.com/wine/wine-regions/champagne/' },
+    ],
   },
   'Sussex': {
-    description: 'Sussex has emerged as England\'s premier sparkling wine region, with chalk soils identical to Champagne producing award-winning wines.',
-    climate: 'Cool maritime climate with long growing seasons ideal for high-acid sparkling wines.',
-    soils: 'Chalk downland soils matching the terroir of Champagne.',
+    description: 'Sussex has emerged as England\'s premier sparkling wine region, with chalk soils identical to Champagne producing award-winning wines. The South Downs provide perfect south-facing slopes, and English sparkling wines have beaten Champagne in blind tastings, attracting serious attention from wine investors.',
+    climate: 'Cool maritime climate with long growing seasons ideal for high-acid sparkling wines. Climate change has made the region increasingly viable for quality viticulture.',
+    soils: 'Chalk downland soils matching the terroir of Champagne, providing excellent drainage and mineral character.',
     grapes: ['Chardonnay', 'Pinot Noir', 'Pinot Meunier'],
+    travelGuide: 'Sussex offers a delightful English wine country experience, combining vineyard visits with the beautiful South Downs National Park. Many estates have excellent restaurants and offer tasting experiences. The region is easily accessible from London, making it perfect for day trips or weekend escapes.',
+    whereToStay: [
+      { name: 'Gravetye Manor', description: 'Country house hotel with starred restaurant and gardens', link: 'https://www.gravetyemanor.co.uk' },
+      { name: 'The Grand Brighton', description: 'Victorian seafront hotel for coastal luxury', link: 'https://www.grandbrighton.co.uk' },
+      { name: 'Goodwood Hotel', description: 'Country estate with spa and racing heritage', link: 'https://www.goodwood.com' },
+    ],
+    wineTours: [
+      { name: 'English Wine Tours', description: 'Guided tours of Sussex vineyards', link: 'https://www.english-wine-tours.co.uk' },
+      { name: 'Nyetimber', description: 'Tours of England\'s most famous sparkling wine producer', link: 'https://www.nyetimber.com' },
+      { name: 'Ridgeview Wine Estate', description: 'Award-winning producer with restaurant', link: 'https://www.ridgeview.co.uk' },
+    ],
+    bestTimeToVisit: 'May-September, with harvest in late September-October',
+    famousProducers: ['Nyetimber', 'Ridgeview', 'Wiston Estate', 'Gusbourne', 'Bolney Wine Estate'],
+    externalLinks: [
+      { name: 'Wine GB', url: 'https://www.winegb.co.uk' },
+      { name: 'English Wine Producers', url: 'https://www.englishwineproducers.co.uk' },
+      { name: 'Decanter English Wine', url: 'https://www.decanter.com/wine/wine-regions/england/' },
+    ],
   },
-  'Port': {
-    description: 'The Douro Valley produces Port wine, one of the world\'s great fortified wines with excellent aging potential.',
-    climate: 'Hot, dry continental climate protected by mountains.',
-    soils: 'Schist and granite soils on steep terraced vineyards.',
-    grapes: ['Touriga Nacional', 'Touriga Franca', 'Tinta Roriz', 'Tinta Barroca'],
+  'Madeira': {
+    description: 'Madeira produces some of the world\'s longest-lived wines, with a unique heated aging process called estufagem that creates extraordinary complexity. Historic Madeiras from the 18th and 19th centuries are still drinkable today, making these wines legendary among collectors.',
+    climate: 'Subtropical maritime climate with warm temperatures year-round. The island\'s dramatic topography creates numerous microclimates.',
+    soils: 'Volcanic basalt soils on steep terraced vineyards called poios, carved into the mountainside over centuries.',
+    grapes: ['Sercial', 'Verdelho', 'Boal', 'Malmsey', 'Tinta Negra'],
+    travelGuide: 'Madeira is a stunning island destination combining wine culture with dramatic landscapes. The capital Funchal offers easy access to historic lodges and modern producers. Beyond wine, visitors enjoy the levada walks, botanical gardens, and some of the world\'s most spectacular coastal scenery.',
+    whereToStay: [
+      { name: 'Belmond Reid\'s Palace', description: 'Legendary clifftop hotel with afternoon tea tradition', link: 'https://www.belmond.com/hotels/europe/portugal/madeira/belmond-reids-palace/' },
+      { name: 'The Vine Hotel', description: 'Design hotel in Funchal with rooftop bar', link: 'https://www.hotelthevine.com' },
+      { name: 'Quinta da Casa Branca', description: 'Manor house hotel in subtropical gardens', link: 'https://www.quintadacasabranca.com' },
+    ],
+    wineTours: [
+      { name: 'Blandy\'s Wine Lodge', description: 'Historic lodge tours and tastings', link: 'https://www.blandys.com' },
+      { name: 'Madeira Wine Company', description: 'Premium tastings including vintage wines', link: 'https://www.madeirawinecompany.com' },
+      { name: 'Henriques & Henriques', description: 'Family producer offering extensive tours', link: 'https://www.henriquesehenriques.pt' },
+    ],
+    bestTimeToVisit: 'Year-round destination, with festivals in September',
+    famousProducers: ['Blandy\'s', 'Henriques & Henriques', 'Barbeito', 'd\'Oliveiras', 'Justino\'s'],
+    externalLinks: [
+      { name: 'Wine Institute of Madeira', url: 'https://www.vfranca.com' },
+      { name: 'Visit Madeira', url: 'https://www.visitmadeira.pt' },
+      { name: 'Decanter Madeira Guide', url: 'https://www.decanter.com/learn/madeira-wine-guide/' },
+    ],
   },
 }
 
-function getRegionInfo(region: string | null) {
+function getRegionInfo(region: string | null): (RegionData & { name: string }) | null {
   if (!region) return null
   // Try exact match first, then partial match
   if (REGION_INFO[region]) return { name: region, ...REGION_INFO[region] }
@@ -248,45 +345,159 @@ function RegionSection({ region, country, wineName }: { region: string; country:
   if (!info) return null
 
   return (
-    <section className="mt-12" aria-labelledby="region-heading">
-      <h2 id="region-heading" className="text-2xl font-bold text-white mb-6">
-        About {info.name}, {country}
-      </h2>
+    <section className="mt-12 space-y-8" aria-labelledby="region-heading">
+      {/* Region Overview */}
+      <div>
+        <h2 id="region-heading" className="text-3xl font-bold text-white mb-6">
+          Discover {info.name}: Home of {wineName}
+        </h2>
 
-      {/* Region Images */}
-      {images.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          {images.map((img, i) => (
-            <div key={i} className="aspect-video rounded-xl overflow-hidden">
-              <img
-                src={img}
-                alt={`${info.name} wine region vineyard - home of ${wineName}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </div>
+        {/* Region Images */}
+        {images.length > 0 && (
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            {images.map((img, i) => (
+              <div key={i} className="aspect-video rounded-xl overflow-hidden">
+                <img
+                  src={img}
+                  alt={`${info.name} wine region vineyard - home of ${wineName}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="prose prose-invert max-w-none">
+          <p className="text-lg text-slate-300 mb-4">
+            {info.description} <strong>{wineName}</strong> is a prime example of what this exceptional region can produce.
+          </p>
+        </div>
+      </div>
+
+      {/* Terroir & Climate */}
+      <div>
+        <h3 className="text-2xl font-bold text-white mb-4">Terroir & Winemaking</h3>
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="bg-slate-900/50 p-5 rounded-lg border border-slate-800">
+            <h4 className="text-lg font-semibold text-white mb-3">Climate</h4>
+            <p className="text-slate-400">{info.climate}</p>
+          </div>
+          <div className="bg-slate-900/50 p-5 rounded-lg border border-slate-800">
+            <h4 className="text-lg font-semibold text-white mb-3">Terroir</h4>
+            <p className="text-slate-400">{info.soils}</p>
+          </div>
+          <div className="bg-slate-900/50 p-5 rounded-lg border border-slate-800">
+            <h4 className="text-lg font-semibold text-white mb-3">Key Grapes</h4>
+            <p className="text-slate-400">{info.grapes.join(', ')}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Famous Producers */}
+      <div>
+        <h3 className="text-2xl font-bold text-white mb-4">Famous {info.name} Producers</h3>
+        <p className="text-slate-400 mb-4">
+          {info.name} is home to some of the world&apos;s most prestigious wine estates. Notable producers include:
+        </p>
+        <div className="flex flex-wrap gap-3">
+          {info.famousProducers.map((producer) => (
+            <span
+              key={producer}
+              className="px-4 py-2 bg-purple-900/30 border border-purple-700/50 rounded-full text-purple-300 text-sm"
+            >
+              {producer}
+            </span>
           ))}
         </div>
-      )}
+      </div>
 
-      <div className="prose prose-invert max-w-none">
-        <p className="text-lg text-slate-300 mb-4">
-          {info.description} <strong>{wineName}</strong> is a prime example of what this exceptional region can produce.
+      {/* Travel Guide */}
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 border border-slate-700">
+        <h3 className="text-2xl font-bold text-white mb-4">
+          Planning Your {info.name} Wine Trip
+        </h3>
+        <p className="text-slate-300 text-lg mb-6">
+          {info.travelGuide}
         </p>
+        <div className="inline-block bg-purple-900/50 px-4 py-2 rounded-lg border border-purple-700/50">
+          <span className="text-purple-300 font-medium">Best Time to Visit:</span>
+          <span className="text-white ml-2">{info.bestTimeToVisit}</span>
+        </div>
+      </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mt-6">
-          <div className="bg-slate-900/50 p-4 rounded-lg">
-            <h4 className="text-lg font-semibold text-white mb-2">Climate</h4>
-            <p className="text-slate-400 text-sm">{info.climate}</p>
-          </div>
-          <div className="bg-slate-900/50 p-4 rounded-lg">
-            <h4 className="text-lg font-semibold text-white mb-2">Terroir</h4>
-            <p className="text-slate-400 text-sm">{info.soils}</p>
-          </div>
-          <div className="bg-slate-900/50 p-4 rounded-lg">
-            <h4 className="text-lg font-semibold text-white mb-2">Key Grapes</h4>
-            <p className="text-slate-400 text-sm">{info.grapes.join(', ')}</p>
-          </div>
+      {/* Where to Stay */}
+      <div>
+        <h3 className="text-2xl font-bold text-white mb-4">
+          Where to Stay in {info.name}
+        </h3>
+        <p className="text-slate-400 mb-6">
+          Experience the best of {info.name} wine country with these exceptional accommodations, perfect for wine lovers exploring the region.
+        </p>
+        <div className="grid md:grid-cols-3 gap-6">
+          {info.whereToStay.map((hotel) => (
+            <a
+              key={hotel.name}
+              href={hotel.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-slate-900/50 p-5 rounded-lg border border-slate-800 hover:border-purple-600 transition-colors group"
+            >
+              <h4 className="text-lg font-semibold text-white group-hover:text-purple-400 mb-2">
+                {hotel.name} ↗
+              </h4>
+              <p className="text-slate-400 text-sm">{hotel.description}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Wine Tours */}
+      <div>
+        <h3 className="text-2xl font-bold text-white mb-4">
+          {info.name} Wine Tours & Experiences
+        </h3>
+        <p className="text-slate-400 mb-6">
+          Discover {info.name}&apos;s finest producers with these recommended wine tour operators. Whether you prefer intimate private tastings or group excursions, there&apos;s an experience for every wine lover.
+        </p>
+        <div className="grid md:grid-cols-3 gap-6">
+          {info.wineTours.map((tour) => (
+            <a
+              key={tour.name}
+              href={tour.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-slate-900/50 p-5 rounded-lg border border-slate-800 hover:border-green-600 transition-colors group"
+            >
+              <h4 className="text-lg font-semibold text-white group-hover:text-green-400 mb-2">
+                {tour.name} ↗
+              </h4>
+              <p className="text-slate-400 text-sm">{tour.description}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* External Resources */}
+      <div className="bg-slate-900/30 rounded-xl p-6 border border-slate-800">
+        <h3 className="text-xl font-bold text-white mb-4">
+          Learn More About {info.name} Wines
+        </h3>
+        <p className="text-slate-400 mb-4">
+          Explore these authoritative resources to deepen your knowledge of {info.name} wines like {wineName}:
+        </p>
+        <div className="flex flex-wrap gap-4">
+          {info.externalLinks.map((link) => (
+            <a
+              key={link.name}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors text-sm"
+            >
+              {link.name} ↗
+            </a>
+          ))}
         </div>
       </div>
     </section>
