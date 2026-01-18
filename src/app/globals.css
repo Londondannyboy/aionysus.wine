@@ -5,6 +5,18 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Burgundy wine color palette */
+  --color-burgundy-50: #fdf2f4;
+  --color-burgundy-100: #fce7eb;
+  --color-burgundy-200: #f9d0d9;
+  --color-burgundy-300: #f4a8b8;
+  --color-burgundy-400: #ec7591;
+  --color-burgundy-500: #df486c;
+  --color-burgundy-600: #722f37;
+  --color-burgundy-700: #5c262d;
+  --color-burgundy-800: #4d2126;
+  --color-burgundy-900: #421e23;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
