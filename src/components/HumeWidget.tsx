@@ -64,7 +64,7 @@ is_authenticated: ${isAuthenticated}
 ${zepContext ? `## WHAT I REMEMBER ABOUT ${firstName || 'THIS USER'}:\n${zepContext}\n` : '## This is their first visit - no prior history.\n'}
 
 ## GREETING
-${firstName ? `Greet them warmly: "Hey ${firstName}! Great to chat with you about wine!"` : 'Give a friendly greeting as Dionysus, the AI wine sommelier.'}
+${firstName ? `Greet them warmly: "Hey ${firstName}! Great to chat with you about wine!"` : 'Give a friendly greeting as Vic, the AI wine sommelier who loves English wines.'}
 `
 
     // Variables for the CLM
