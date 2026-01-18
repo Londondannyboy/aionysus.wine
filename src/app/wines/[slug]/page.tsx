@@ -2,8 +2,8 @@ import { getWineBySlug, formatPrice, getWineInvestmentData, WineInvestmentData, 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
-import { WineImage, WineCardImage } from '@/components/WineImage'
-import { LightPageWrapper } from '@/components/PageWrapper'
+import { WineCardImage } from '@/components/WineImage'
+import { WinePageContext } from '@/components/WinePageContext'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -463,9 +463,10 @@ export default async function WineDetailPage({ params }: Props) {
   const drinkingWindow = getDrinkingWindow(wine.vintage, wine.wine_type, wine.classification)
 
   return (
-    <LightPageWrapper
-      sidebarInitial={`Hello! I'm Vic, your AI sommelier. I see you're looking at ${fullWineName} - excellent choice! Would you like to know more about this wine, its investment potential, or find similar bottles?`}
-    >
+    <>
+      {/* Provide wine context to CopilotKit so Vic knows about this wine */}
+      <WinePageContext wine={wine} />
+
       <div className="min-h-screen bg-white">
         {/* Header Bar */}
         <div className="bg-stone-50 border-b border-stone-200 py-2">
@@ -664,6 +665,6 @@ export default async function WineDetailPage({ params }: Props) {
         </article>
       </div>
       </div>
-    </LightPageWrapper>
+    </>
   )
 }

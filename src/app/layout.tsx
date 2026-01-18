@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { NeonAuthUIProvider, UserButton } from "@/lib/auth/client";
 import { authClient } from "@/lib/auth/client";
 import { Providers } from "@/components/providers";
+import { GlobalVicSidebar } from "@/components/GlobalVicSidebar";
 import "./globals.css";
 import "@copilotkit/react-ui/styles.css";
 
@@ -67,7 +68,9 @@ export default function RootLayout({
           </header>
           <div className="pt-14">
             <Providers>
-              {children}
+              <GlobalVicSidebar>
+                {children}
+              </GlobalVicSidebar>
             </Providers>
           </div>
         </NeonAuthUIProvider>
