@@ -1,5 +1,5 @@
 """
-Penelope Agent - UK Pension Advisor Voice Assistant
+Dionysus Agent - AI Wine Sommelier Voice Assistant
 
 Single Pydantic AI agent serving both:
 - CopilotKit chat (AG-UI protocol)
@@ -29,16 +29,23 @@ try:
     ZEP_AVAILABLE = True
 except ImportError:
     ZEP_AVAILABLE = False
-    print("[PENELOPE] Warning: zep-cloud not installed, memory features disabled", file=sys.stderr)
+    print("[DIONYSUS] Warning: zep-cloud not installed, memory features disabled", file=sys.stderr)
 
 from .database import (
-    get_all_schemes,
-    get_scheme_by_name,
-    search_schemes,
-    get_schemes_by_type,
-    get_scheme_details,
-    get_scheme_funds,
-    compare_scheme_fees,
+    get_all_wines,
+    get_wine_by_slug,
+    get_wine_by_id,
+    search_wines,
+    get_wines_by_region,
+    get_wines_by_producer,
+    get_wines_by_price_range,
+    get_regions,
+    get_producers,
+    get_wine_stats,
+    get_region_info,
+    get_food_pairing_wines,
+    WINE_REGIONS,
+    FOOD_PAIRINGS,
 )
 
 # =============================================================================
@@ -67,12 +74,13 @@ class SessionContext:
     user_name: Optional[str] = None
     context_fetched: bool = False
 
-    # Pension context
-    current_scheme: Optional[str] = None
-    scheme_type_preference: Optional[str] = None
-    contribution_amount: Optional[float] = None
-    retirement_age: Optional[int] = None
-    current_age: Optional[int] = None
+    # Wine context
+    current_wine: Optional[str] = None
+    preferred_region: Optional[str] = None
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
+    occasion: Optional[str] = None
+    food_pairing: Optional[str] = None
 
 
 def get_session_context(session_id: str) -> SessionContext:
@@ -104,121 +112,108 @@ def get_zep_client() -> Optional["AsyncZep"]:
         api_key = os.environ.get("ZEP_API_KEY")
         if api_key:
             _zep_client = AsyncZep(api_key=api_key)
-            print("[PENELOPE] Zep memory client initialized", file=sys.stderr)
+            print("[DIONYSUS] Zep memory client initialized", file=sys.stderr)
         else:
-            print("[PENELOPE] ZEP_API_KEY not set, memory disabled", file=sys.stderr)
+            print("[DIONYSUS] ZEP_API_KEY not set, memory disabled", file=sys.stderr)
     return _zep_client
 
 
 def get_zep_user_id(user_id: str) -> str:
     """Prefix user_id with project name to separate from other projects."""
-    return f"penelope_{user_id}"
+    return f"dionysus_{user_id}"
 
 
 # =============================================================================
-# PENELOPE SYSTEM PROMPT
+# DIONYSUS SYSTEM PROMPT
 # =============================================================================
 
-PENELOPE_SYSTEM_PROMPT = """You are Penelope, a friendly and knowledgeable UK pension expert. You help people understand pensions, compare schemes, and plan for retirement.
+DIONYSUS_SYSTEM_PROMPT = """You are Dionysus, a sophisticated AI wine sommelier with encyclopedic knowledge of fine wines. You help people discover wines, understand wine regions, find perfect food pairings, and build their collections.
 
 ## YOUR PERSONALITY
-- Warm, friendly, and reassuring - pensions can be confusing!
-- Clear, jargon-free explanations of complex pension topics
-- Professional but approachable - like a helpful friend who happens to be a pension expert
-- Always mention FCA regulation where relevant for credibility
-- Encourage people to seek professional advice for complex decisions
+- Warm, knowledgeable, and passionate about wine
+- Like a trusted sommelier at a fine restaurant - approachable yet refined
+- Uses evocative language to describe wines (notes of blackcurrant, hints of oak...)
+- Excited to share wine discoveries and educate
+- Never pretentious - makes wine accessible to everyone
 
-## PRIORITY 1: PENSION DISCOVERY
+## PRIORITY 1: WINE DISCOVERY
 
-When a user asks about pensions, use the appropriate tools:
+When a user asks about wines, use the appropriate tools:
 
 **TRIGGER -> ACTION mapping:**
 
 | User says... | Tool to call |
 |--------------|--------------|
-| "What SIPPs are available?" | search_pension_schemes(query="SIPP") |
-| "Tell me about Vanguard" | get_scheme_details(scheme_name="Vanguard") |
-| "Show me workplace pensions" | get_schemes_by_type(scheme_type="workplace") |
-| "Compare NEST and People's Pension" | compare_schemes(scheme1="NEST", scheme2="People's Pension") |
-| "What fees does Hargreaves charge?" | compare_pension_fees(scheme_names=["Hargreaves Lansdown"]) |
-| "How much will I have at retirement?" | calculate_retirement_income(...) |
+| "Show me Burgundy wines" | search_wines_tool(region="Burgundy") |
+| "What Champagnes do you have?" | search_wines_tool(region="Champagne") |
+| "Find wines under £50" | search_wines_tool(max_price=50) |
+| "Tell me about Domaine de la Romanée-Conti" | search_wines_tool(producer="Romanée-Conti") |
+| "I'm looking for a Pinot Noir" | search_wines_tool(grape="Pinot Noir") |
+| "What wine goes with steak?" | get_food_pairing_tool(food="red_meat") |
 
-## PRIORITY 2: PENSION EDUCATION
+## PRIORITY 2: WINE EDUCATION
 
-Share clear explanations of:
+Share your knowledge about:
 
-**PENSION TYPES:**
-- Workplace pensions: Auto-enrolment schemes via employer (NEST, People's Pension, NOW:)
-- Personal pensions: Individual arrangements (Aviva, Scottish Widows, L&G)
-- SIPPs: Self-Invested Personal Pensions for DIY investors (Vanguard, AJ Bell, HL)
-- State Pension: Government pension based on NI contributions
-- Defined Benefit: Final salary schemes (rare, but valuable)
+**WINE REGIONS:**
+- Burgundy: Home of world-class Pinot Noir and Chardonnay
+- Bordeaux: Famous for prestigious red blends (Cabernet, Merlot)
+- Champagne: The world's most celebrated sparkling wine
+- Rhône Valley: Powerful Syrahs and Grenache blends
+- Barolo/Piedmont: The "King of Wines" from Nebbiolo grapes
 
-**KEY NUMBERS (2024/25):**
-- Auto-enrolment minimum: 8% total (3% employer, 5% employee)
-- Tax relief: 20%, 40%, 45% depending on tax band
-- Annual allowance: £60,000
-- Lifetime allowance: Abolished April 2024
-- State pension age: 66 (rising to 67 by 2028)
-- Pension freedoms: Age 55 (rising to 57 in 2028)
-- Full state pension: £221.20/week (2024/25)
+**WINE TYPES:**
+- Red: Full-bodied (Cabernet, Syrah) to light (Pinot Noir, Beaujolais)
+- White: Rich (Burgundy Chardonnay) to crisp (Chablis, Sancerre)
+- Rosé: Provence rosé, Champagne rosé
+- Sparkling: Champagne, Crémant, Prosecco
+- Dessert: Sauternes, Port, Late Harvest
 
-**MAJOR PROVIDERS:**
-- Workplace: NEST, People's Pension, NOW: Pensions, Smart Pension
-- SIPP: Vanguard, AJ Bell, Hargreaves Lansdown, Fidelity, Interactive Investor
-- Traditional: Aviva, Scottish Widows, Legal & General, Standard Life
-
-## PRIORITY 3: FEE COMPARISON
-
-Help users understand fees:
-- Annual Management Charge (AMC): Typically 0.15% - 1.5%
-- Platform fees: Some charge flat fees, others percentage
-- Transaction fees: May apply for buying/selling
-- Lower fees compound to significant savings over time
-
-## CONVERSATIONAL FLOW
-
-Guide users naturally through:
-1. What type of pension are you interested in? (workplace, SIPP, personal)
-2. What's your situation? (employed, self-employed, approaching retirement)
-3. What matters most? (low fees, investment choice, simplicity)
-4. Based on your needs, here are my recommendations...
+**FOOD PAIRINGS:**
+- Red meat → Bold reds (Bordeaux, Barolo, Côte-Rôtie)
+- Poultry → Pinot Noir, Burgundy, Chardonnay
+- Fish → White Burgundy, Chablis, Sancerre
+- Shellfish → Champagne, Muscadet, Albariño
+- Cheese → Port, Sauternes, aged Burgundy
+- Dessert → Sauternes, Port, Moscato
 
 ## RESPONSE STYLE
 - Keep responses concise for voice (50-100 words max)
-- Be warm and reassuring - pensions can feel overwhelming!
-- Use the user's name once you know it
-- Explain jargon when you use it
-- End with a natural follow-up to keep the conversation flowing
+- Be enthusiastic but not overwhelming
+- Use sensory language: "notes of cherry", "silky tannins", "crisp minerality"
+- Use the user's name naturally once you know it
+- End with a helpful follow-up question
 
-## PENSION TIPS TO SHARE
+## WINE EXPERTISE TO SHARE
 
 When relevant:
-- "Always get your employer match - it's free money!"
-- "Tax relief means you get 20-45% of your contribution back"
-- "Lower fees compound to big savings over decades"
-- "The state pension alone won't maintain most people's lifestyle"
-- "It's never too late to start - but the earlier the better"
-- "Consider consolidating old pensions for simplicity"
+- "Burgundy is about terroir - the same grape expresses differently in each village"
+- "A great wine tells a story of its place and vintage"
+- "Don't be intimidated by wine - trust your own palate"
+- "The best wine is the one you enjoy drinking"
+- "Consider starting a wine journal to track what you love"
+- "Decanting can transform a young wine - give it time to breathe"
 
 ## IDENTITY (CRITICAL)
-- You ARE Penelope, the friendly pension guide
+- You ARE Dionysus, the passionate wine sommelier
 - NEVER say "As a language model" or "I'm an AI"
-- If asked who you are: "I'm Penelope, your pension guide! I'm here to make retirement planning simple and help you understand your options."
-- Always recommend consulting a regulated financial adviser for personal advice
+- If asked who you are: "I'm Dionysus, your personal wine sommelier! I'm here to help you discover extraordinary wines and find the perfect bottle for any occasion."
+- Make wine recommendations based on user preferences
 
 ## USER PERSONALIZATION
-- If the user's name is provided in [brackets] at the start of their message, USE IT naturally
-- Greet returning users by name: "Welcome back, [Name]! Ready to continue planning your retirement?"
-- Use their name occasionally but not excessively (every 2-3 exchanges is good)
-- Remember their preferences within the session
+- If the user's name is provided, USE IT naturally
+- Greet returning users warmly: "Welcome back, [Name]! Ready to explore more wines?"
+- Remember their preferences within the session (regions, price range, occasions)
+- Use their name occasionally but not excessively (every 2-3 exchanges)
 
 ## PHONETIC CORRECTIONS (voice transcription)
-- "sip/sipp" -> SIPP (Self-Invested Personal Pension)
-- "nest/ness" -> NEST (National Employment Savings Trust)
-- "isa/eyes-a" -> ISA (but clarify this is different from a pension)
-- "annuity/annuity" -> Annuity
-- "drawdown/draw down" -> Drawdown
+- "burgundy/bergundy" -> Burgundy
+- "bordoe/bordough" -> Bordeaux
+- "champain/shampane" -> Champagne
+- "pinot/pino" -> Pinot
+- "merlot/merloe" -> Merlot
+- "cabernet/cabernay" -> Cabernet
+- "chardonnay/shardonay" -> Chardonnay
 """
 
 
@@ -227,16 +222,16 @@ When relevant:
 # =============================================================================
 
 @dataclass
-class PenelopeDeps:
-    """Dependencies for the Penelope agent."""
+class DionysusDeps:
+    """Dependencies for the Dionysus agent."""
     session_id: str = ""
     user_id: Optional[str] = None
 
 
-penelope_agent = Agent(
+dionysus_agent = Agent(
     "google-gla:gemini-2.0-flash",
-    deps_type=PenelopeDeps,
-    system_prompt=PENELOPE_SYSTEM_PROMPT,
+    deps_type=DionysusDeps,
+    system_prompt=DIONYSUS_SYSTEM_PROMPT,
 )
 
 
@@ -244,254 +239,256 @@ penelope_agent = Agent(
 # AGENT TOOLS
 # =============================================================================
 
-@penelope_agent.tool
-async def search_pension_schemes(
-    ctx: RunContext[PenelopeDeps],
-    query: str,
-    scheme_type: Optional[str] = None,
+@dionysus_agent.tool
+async def search_wines_tool(
+    ctx: RunContext[DionysusDeps],
+    query: Optional[str] = None,
+    region: Optional[str] = None,
+    country: Optional[str] = None,
+    producer: Optional[str] = None,
+    grape: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    vintage: Optional[int] = None,
 ) -> str:
-    """Search for pension schemes by name, provider, or type. Call this when user asks about specific pension schemes."""
+    """Search for wines by name, region, producer, grape variety, or price range. Call this when user asks about wines."""
     session_ctx = get_session_context(ctx.deps.session_id)
 
-    schemes = await search_schemes(query)
+    wines = await search_wines(
+        query=query,
+        region=region,
+        country=country,
+        producer=producer,
+        grape=grape,
+        min_price=min_price,
+        max_price=max_price,
+        vintage=vintage,
+        limit=8
+    )
 
-    # Filter by type if specified
-    if scheme_type and schemes:
-        schemes = [s for s in schemes if s.get('scheme_type', '').lower() == scheme_type.lower()]
+    if wines:
+        if region:
+            session_ctx.preferred_region = region
+        if min_price:
+            session_ctx.budget_min = min_price
+        if max_price:
+            session_ctx.budget_max = max_price
 
-    if schemes:
-        session_ctx.current_scheme = schemes[0].get('name')
         results = []
-        for scheme in schemes[:5]:
-            amc = scheme.get('annual_management_charge')
-            amc_str = f" | AMC: {amc}%" if amc else ""
-            rating = scheme.get('performance_rating', '')
-            rating_str = f" | {'*' * rating}" if rating else ""
-            results.append(f"- {scheme['name']} ({scheme.get('provider', 'Unknown')}){amc_str}{rating_str}")
-        return f"Found these pension schemes matching '{query}':\n" + "\n".join(results)
+        for wine in wines:
+            price = f"£{wine['price_retail']}" if wine.get('price_retail') else "Price on request"
+            vintage_str = f"{wine.get('vintage')} " if wine.get('vintage') else ""
+            results.append(f"- {vintage_str}{wine['name']} ({wine.get('winery', 'Unknown')}) - {wine.get('region', '')} - {price}")
+
+        filter_desc = []
+        if query: filter_desc.append(f"'{query}'")
+        if region: filter_desc.append(region)
+        if producer: filter_desc.append(producer)
+        if grape: filter_desc.append(grape)
+        if max_price: filter_desc.append(f"under £{max_price}")
+
+        return f"Found {len(wines)} wines{' matching ' + ', '.join(filter_desc) if filter_desc else ''}:\n" + "\n".join(results)
     else:
-        return f"I couldn't find pension schemes matching '{query}'. Would you like me to suggest some popular options?"
+        return f"I couldn't find wines matching your criteria. Would you like me to suggest some alternatives?"
 
 
-@penelope_agent.tool
-async def get_scheme_details(ctx: RunContext[PenelopeDeps], scheme_name: str) -> str:
-    """Get detailed information about a specific pension scheme. Call this when user wants to know more about a scheme."""
+@dionysus_agent.tool
+async def get_wine_details_tool(ctx: RunContext[DionysusDeps], wine_slug: str) -> str:
+    """Get detailed information about a specific wine. Call this when user wants more details about a wine."""
     session_ctx = get_session_context(ctx.deps.session_id)
 
-    scheme = await get_scheme_by_name(scheme_name)
+    wine = await get_wine_by_slug(wine_slug)
 
-    if scheme:
-        session_ctx.current_scheme = scheme['name']
+    if wine:
+        session_ctx.current_wine = wine['name']
 
-        # Build detailed response
-        details = [f"**{scheme['name']}** by {scheme.get('provider', 'Unknown')}"]
-        if scheme.get('scheme_type'):
-            details.append(f"Type: {scheme['scheme_type'].title()}")
-        if scheme.get('annual_management_charge'):
-            details.append(f"Annual Management Charge: {scheme['annual_management_charge']}%")
-        if scheme.get('platform_fee'):
-            details.append(f"Platform Fee: {scheme['platform_fee']}%")
-        if scheme.get('min_contribution'):
-            details.append(f"Minimum Contribution: £{scheme['min_contribution']}/month")
-        if scheme.get('fund_options'):
-            details.append(f"Fund Options: {scheme['fund_options']} funds available")
-        if scheme.get('sipp_available'):
-            details.append("SIPP Available: Yes")
-        if scheme.get('drawdown_available'):
-            details.append("Drawdown Available: Yes")
-        if scheme.get('fca_regulated'):
-            details.append("FCA Regulated: Yes")
-        if scheme.get('performance_rating'):
-            details.append(f"Rating: {'*' * scheme['performance_rating']} ({scheme['performance_rating']}/5)")
-        if scheme.get('features'):
-            features = scheme['features'][:4] if isinstance(scheme['features'], list) else [scheme['features']]
-            details.append(f"Features: {', '.join(features)}")
-        if scheme.get('suitable_for'):
-            suitable = scheme['suitable_for'][:3] if isinstance(scheme['suitable_for'], list) else [scheme['suitable_for']]
-            details.append(f"Best for: {', '.join(suitable)}")
+        details = [f"**{wine.get('vintage', '')} {wine['name']}**"]
+        if wine.get('winery'):
+            details.append(f"Producer: {wine['winery']}")
+        if wine.get('region'):
+            details.append(f"Region: {wine['region']}, {wine.get('country', '')}")
+        if wine.get('grape_variety'):
+            details.append(f"Grape: {wine['grape_variety']}")
+        if wine.get('classification'):
+            details.append(f"Classification: {wine['classification']}")
+        if wine.get('price_retail'):
+            details.append(f"Price: £{wine['price_retail']}")
+        if wine.get('bottle_size'):
+            details.append(f"Size: {wine['bottle_size']}")
+        if wine.get('tasting_notes'):
+            # Strip HTML and truncate
+            notes = wine['tasting_notes'].replace('<p>', '').replace('</p>', ' ').strip()[:200]
+            details.append(f"Notes: {notes}...")
 
         return "\n".join(details)
     else:
-        matches = await search_schemes(scheme_name)
-        if matches:
-            suggestions = ', '.join([s['name'] for s in matches[:3]])
-            return f"I couldn't find an exact match for '{scheme_name}'. Did you mean: {suggestions}?"
-        return f"I couldn't find information about '{scheme_name}'. Could you tell me more about what you're looking for?"
+        return f"I couldn't find that wine. Would you like me to search for similar wines?"
 
 
-@penelope_agent.tool
-async def get_schemes_by_type(ctx: RunContext[PenelopeDeps], scheme_type: str) -> str:
-    """Get pension schemes by type (workplace, sipp, personal, stakeholder). Call this when user asks for a specific type."""
-    schemes = await get_schemes_by_type(scheme_type)
-
-    if schemes:
-        results = []
-        for scheme in schemes[:6]:
-            amc = scheme.get('annual_management_charge')
-            amc_str = f" - AMC: {amc}%" if amc else ""
-            results.append(f"- {scheme['name']} ({scheme.get('provider', 'Unknown')}){amc_str}")
-
-        type_descriptions = {
-            'workplace': 'Workplace pensions are provided by employers under auto-enrolment. Your employer contributes too!',
-            'sipp': 'SIPPs (Self-Invested Personal Pensions) give you full control over your investments.',
-            'personal': 'Personal pensions are individual arrangements, good for self-employed or additional savings.',
-            'stakeholder': 'Stakeholder pensions have capped charges and flexible contributions.',
-        }
-        description = type_descriptions.get(scheme_type.lower(), '')
-
-        return f"Here are some {scheme_type} pensions:\n" + "\n".join(results) + (f"\n\n{description}" if description else "")
-    else:
-        return f"I don't have any {scheme_type} pensions in my database. The main types are: workplace, SIPP, personal, and stakeholder."
-
-
-@penelope_agent.tool
-async def compare_schemes(ctx: RunContext[PenelopeDeps], scheme1: str, scheme2: str) -> str:
-    """Compare two pension schemes side by side. Call this when user wants to compare schemes."""
-    s1 = await get_scheme_by_name(scheme1)
-    s2 = await get_scheme_by_name(scheme2)
-
-    if not s1 and not s2:
-        return f"I couldn't find either '{scheme1}' or '{scheme2}' in my database. Could you check the names?"
-    elif not s1:
-        return f"I found {s2['name']} but couldn't find '{scheme1}'. Would you like details on {s2['name']}?"
-    elif not s2:
-        return f"I found {s1['name']} but couldn't find '{scheme2}'. Would you like details on {s1['name']}?"
-
-    comparison = f"**{s1['name']}** vs **{s2['name']}**\n\n"
-
-    # Compare key attributes
-    attrs = [
-        ('Provider', 'provider'),
-        ('Type', 'scheme_type'),
-        ('AMC', 'annual_management_charge'),
-        ('Platform Fee', 'platform_fee'),
-        ('Min Contribution', 'min_contribution'),
-        ('Fund Options', 'fund_options'),
-        ('Rating', 'performance_rating'),
-    ]
-
-    for label, key in attrs:
-        v1 = s1.get(key, 'N/A')
-        v2 = s2.get(key, 'N/A')
-        if key in ['annual_management_charge', 'platform_fee']:
-            v1 = f"{v1}%" if v1 != 'N/A' else 'N/A'
-            v2 = f"{v2}%" if v2 != 'N/A' else 'N/A'
-        elif key == 'min_contribution':
-            v1 = f"£{v1}/mo" if v1 != 'N/A' else 'N/A'
-            v2 = f"£{v2}/mo" if v2 != 'N/A' else 'N/A'
-        elif key == 'performance_rating':
-            v1 = f"{'*' * v1}" if v1 != 'N/A' and v1 else 'N/A'
-            v2 = f"{'*' * v2}" if v2 != 'N/A' and v2 else 'N/A'
-        comparison += f"**{label}:** {v1} | {v2}\n"
-
-    return comparison
-
-
-@penelope_agent.tool
-async def compare_pension_fees(ctx: RunContext[PenelopeDeps], scheme_names: List[str]) -> str:
-    """Compare fees between multiple pension schemes. Call this when user asks about fees."""
-    results = await compare_scheme_fees(scheme_names)
-
-    if results:
-        comparison = "**Fee Comparison:**\n\n"
-        for scheme in results:
-            amc = scheme.get('annual_management_charge', 'N/A')
-            platform = scheme.get('platform_fee', 'N/A')
-            comparison += f"**{scheme['name']}**\n"
-            comparison += f"  - AMC: {amc}%\n" if amc != 'N/A' else "  - AMC: Not specified\n"
-            comparison += f"  - Platform: {platform}%\n\n" if platform != 'N/A' else "  - Platform: None/included\n\n"
-
-        comparison += "\n*Lower fees compound to big savings over decades!*"
-        return comparison
-    else:
-        return "I couldn't find fee information for those schemes. Which pension providers would you like me to compare?"
-
-
-@penelope_agent.tool
-async def calculate_retirement_income(
-    ctx: RunContext[PenelopeDeps],
-    current_age: int,
-    retirement_age: int,
-    monthly_contribution: float,
-    current_pot: float = 0,
-    employer_contribution: float = 0,
-    expected_return: float = 5.0
-) -> str:
-    """Calculate estimated retirement pot based on contributions. Call this when user asks about retirement projections."""
+@dionysus_agent.tool
+async def get_wines_by_region_tool(ctx: RunContext[DionysusDeps], region: str) -> str:
+    """Get wines from a specific wine region. Call this when user asks about a region."""
     session_ctx = get_session_context(ctx.deps.session_id)
-    session_ctx.current_age = current_age
-    session_ctx.retirement_age = retirement_age
-    session_ctx.contribution_amount = monthly_contribution
+    session_ctx.preferred_region = region
 
-    years_to_retirement = retirement_age - current_age
-    if years_to_retirement <= 0:
-        return "It looks like you've already reached or passed your retirement age! Would you like to discuss drawdown options instead?"
+    wines = await get_wines_by_region(region, limit=8)
+    region_info = get_region_info(region)
 
-    # Calculate future value with compound interest
-    total_monthly = monthly_contribution + employer_contribution
-    monthly_rate = (expected_return / 100) / 12
-    months = years_to_retirement * 12
+    results = []
 
-    # Future value of existing pot
-    future_pot = current_pot * ((1 + expected_return / 100) ** years_to_retirement)
+    # Add region context if available
+    if region_info:
+        results.append(f"**{region_info['name']}** ({region_info['country']})")
+        results.append(f"{region_info['description']}")
+        if region_info.get('key_grapes'):
+            results.append(f"Key grapes: {', '.join(region_info['key_grapes'])}")
+        results.append("")
 
-    # Future value of monthly contributions (annuity formula)
-    if monthly_rate > 0:
-        future_contributions = total_monthly * (((1 + monthly_rate) ** months - 1) / monthly_rate)
+    if wines:
+        results.append("**Wines from this region:**")
+        for wine in wines:
+            price = f"£{wine['price_retail']}" if wine.get('price_retail') else "Price on request"
+            vintage_str = f"{wine.get('vintage')} " if wine.get('vintage') else ""
+            results.append(f"- {vintage_str}{wine['name']} ({wine.get('winery', '')}) - {price}")
+        return "\n".join(results)
     else:
-        future_contributions = total_monthly * months
-
-    total_pot = future_pot + future_contributions
-
-    # Estimate annual income (4% safe withdrawal rate)
-    annual_income = total_pot * 0.04
-    monthly_income = annual_income / 12
-
-    result = f"""**Your Retirement Projection:**
-
-**Assumptions:**
-- Current age: {current_age}
-- Retirement age: {retirement_age}
-- Years to retirement: {years_to_retirement}
-- Monthly contribution: £{monthly_contribution:,.0f}
-- Employer contribution: £{employer_contribution:,.0f}
-- Current pension pot: £{current_pot:,.0f}
-- Expected annual return: {expected_return}%
-
-**Estimated Results:**
-- Projected pension pot: **£{total_pot:,.0f}**
-- Estimated monthly income (4% withdrawal): **£{monthly_income:,.0f}**
-- Plus state pension: ~£{221.20 * 4.33:,.0f}/month (if full entitlement)
-
-*These are estimates only. Actual returns may vary. Consider speaking to a financial adviser for personal advice.*"""
-
-    return result
+        if region_info:
+            return "\n".join(results) + f"\n\nI don't have wines from {region} in stock right now. Would you like to explore a similar region?"
+        return f"I couldn't find wines from {region}. Did you mean Burgundy, Bordeaux, Champagne, or Rhône?"
 
 
-@penelope_agent.tool
-async def show_pension_providers(ctx: RunContext[PenelopeDeps]) -> str:
-    """Show all available pension providers in the database."""
-    schemes = await get_all_schemes()
+@dionysus_agent.tool
+async def get_wines_by_producer_tool(ctx: RunContext[DionysusDeps], producer: str) -> str:
+    """Get wines from a specific producer/winery. Call this when user asks about a producer."""
+    wines = await get_wines_by_producer(producer, limit=8)
 
-    if schemes:
-        providers = {}
-        for scheme in schemes:
-            provider = scheme.get('provider', 'Unknown')
-            scheme_type = scheme.get('scheme_type', 'pension')
-            key = provider
-            if key not in providers:
-                providers[key] = {'count': 0, 'types': set()}
-            providers[key]['count'] += 1
-            providers[key]['types'].add(scheme_type)
+    if wines:
+        results = [f"**Wines from {wines[0].get('winery', producer)}:**"]
+        for wine in wines:
+            price = f"£{wine['price_retail']}" if wine.get('price_retail') else "Price on request"
+            vintage_str = f"{wine.get('vintage')} " if wine.get('vintage') else ""
+            results.append(f"- {vintage_str}{wine['name']} ({wine.get('region', '')}) - {price}")
+        return "\n".join(results)
+    else:
+        return f"I couldn't find wines from '{producer}'. Would you like me to search for similar producers?"
 
-        sorted_providers = sorted(providers.items(), key=lambda x: -x[1]['count'])[:10]
-        result = "**Pension providers in my database:**\n"
-        for provider, info in sorted_providers:
-            types = ', '.join(info['types'])
-            result += f"- {provider} ({types})\n"
+
+@dionysus_agent.tool
+async def get_wines_by_price_tool(
+    ctx: RunContext[DionysusDeps],
+    min_price: float = 0,
+    max_price: float = 100
+) -> str:
+    """Get wines within a price range. Call this when user specifies a budget."""
+    session_ctx = get_session_context(ctx.deps.session_id)
+    session_ctx.budget_min = min_price
+    session_ctx.budget_max = max_price
+
+    wines = await get_wines_by_price_range(min_price, max_price, limit=8)
+
+    if wines:
+        results = [f"**Wines between £{int(min_price)} - £{int(max_price)}:**"]
+        for wine in wines:
+            price = f"£{wine['price_retail']}" if wine.get('price_retail') else "Price on request"
+            vintage_str = f"{wine.get('vintage')} " if wine.get('vintage') else ""
+            results.append(f"- {vintage_str}{wine['name']} ({wine.get('region', '')}) - {price}")
+        return "\n".join(results)
+    else:
+        return f"I couldn't find wines in the £{int(min_price)}-£{int(max_price)} range. Would you like me to expand the search?"
+
+
+@dionysus_agent.tool
+async def get_food_pairing_tool(ctx: RunContext[DionysusDeps], food: str) -> str:
+    """Get wine recommendations for food pairing. Call this when user asks what wine goes with food."""
+    session_ctx = get_session_context(ctx.deps.session_id)
+    session_ctx.food_pairing = food
+
+    # Normalize food type
+    food_key = food.lower().replace(" ", "_")
+    pairing_wines = get_food_pairing_wines(food_key)
+
+    if pairing_wines:
+        result = f"**Wine pairings for {food}:**\n"
+        result += f"Great choices: {', '.join(pairing_wines)}\n\n"
+
+        # Search for actual wines matching these styles
+        for style in pairing_wines[:2]:
+            wines = await search_wines(query=style, limit=2)
+            if wines:
+                result += f"**{style} options:**\n"
+                for wine in wines:
+                    price = f"£{wine['price_retail']}" if wine.get('price_retail') else "Price on request"
+                    result += f"- {wine.get('vintage', '')} {wine['name']} - {price}\n"
+
         return result
     else:
-        return "I'm having trouble accessing my pension database at the moment."
+        # General pairing advice
+        food_normalized = food.lower()
+        if any(word in food_normalized for word in ['beef', 'steak', 'lamb', 'meat']):
+            return f"For {food}, I'd recommend bold reds like Bordeaux, Barolo, or a Côte-Rôtie. Would you like me to show you some options?"
+        elif any(word in food_normalized for word in ['fish', 'seafood', 'salmon']):
+            return f"For {food}, try a white Burgundy, Chablis, or a crisp Sancerre. Shall I search for some?"
+        elif any(word in food_normalized for word in ['chicken', 'turkey', 'poultry']):
+            return f"For {food}, Pinot Noir or Chardonnay work beautifully. Want me to find some options?"
+        else:
+            return f"I'd be happy to help pair wine with {food}. Could you tell me more - is it a rich dish, light, spicy, or creamy?"
+
+
+@dionysus_agent.tool
+async def get_region_info_tool(ctx: RunContext[DionysusDeps], region: str) -> str:
+    """Get detailed information about a wine region. Call this when user asks to learn about a region."""
+    region_info = get_region_info(region)
+
+    if region_info:
+        result = [f"**{region_info['name']}** - {region_info['country']}"]
+        result.append(f"\n{region_info['description']}")
+
+        if region_info.get('key_grapes'):
+            result.append(f"\n**Key Grapes:** {', '.join(region_info['key_grapes'])}")
+
+        if region_info.get('notable_appellations'):
+            result.append(f"\n**Notable Appellations:** {', '.join(region_info['notable_appellations'])}")
+        elif region_info.get('notable_houses'):
+            result.append(f"\n**Notable Houses:** {', '.join(region_info['notable_houses'])}")
+        elif region_info.get('notable_areas'):
+            result.append(f"\n**Notable Areas:** {', '.join(region_info['notable_areas'])}")
+
+        if region_info.get('food_pairings'):
+            result.append(f"\n**Food Pairings:** {', '.join(region_info['food_pairings'])}")
+
+        return "\n".join(result)
+    else:
+        return f"I don't have detailed information about {region} yet. The major regions I know well are Burgundy, Bordeaux, Champagne, Rhône, and Barolo/Piedmont. Would you like to learn about one of these?"
+
+
+@dionysus_agent.tool
+async def get_collection_stats_tool(ctx: RunContext[DionysusDeps]) -> str:
+    """Get statistics about the wine collection. Call this when user asks how many wines or about the collection."""
+    stats = await get_wine_stats()
+
+    if stats:
+        return f"""**Our Wine Collection:**
+- Total wines: {stats.get('total_wines', 0):,}
+- Unique regions: {stats.get('unique_regions', 0)}
+- Producers: {stats.get('unique_producers', 0)}
+- Vintages spanning: {stats.get('unique_vintages', 0)} years
+- Price range: £{stats.get('min_price', 0):,.0f} - £{stats.get('max_price', 0):,.0f}
+- Average price: £{float(stats.get('avg_price', 0)):,.0f}
+
+Would you like me to help you explore our collection?"""
+    else:
+        return "I'm having trouble accessing the wine collection statistics right now."
+
+
+@dionysus_agent.tool
+async def list_regions_tool(ctx: RunContext[DionysusDeps]) -> str:
+    """List all available wine regions. Call this when user asks what regions are available."""
+    regions = await get_regions()
+
+    if regions:
+        return f"**Wine regions in our collection:**\n" + "\n".join([f"- {r}" for r in regions[:20]])
+    else:
+        return "I couldn't retrieve the regions list. Try asking about Burgundy, Bordeaux, Champagne, or Rhône!"
 
 
 # =============================================================================
@@ -499,8 +496,8 @@ async def show_pension_providers(ctx: RunContext[PenelopeDeps]) -> str:
 # =============================================================================
 
 app = FastAPI(
-    title="Penelope - UK Pension Advisor",
-    description="Friendly AI pension advisor with voice support",
+    title="Dionysus - AI Wine Sommelier",
+    description="Sophisticated AI wine sommelier with voice support",
     version="1.0.0",
 )
 
@@ -516,14 +513,14 @@ app.add_middleware(
 @app.get("/health")
 async def health():
     """Health check endpoint for Railway."""
-    return {"status": "ok", "agent": "penelope", "version": "1.0.0"}
+    return {"status": "ok", "agent": "dionysus", "version": "1.0.0"}
 
 
 @app.get("/")
 async def root():
     """Root endpoint."""
     return {
-        "message": "Hello! I'm Penelope, your friendly guide to UK pensions!",
+        "message": "Welcome! I'm Dionysus, your AI wine sommelier!",
         "endpoints": {
             "/health": "Health check",
             "/chat/completions": "OpenAI-compatible chat (for Hume EVI)",
@@ -541,7 +538,7 @@ def extract_session_id(request: Request, body: dict) -> Optional[str]:
     # Check query parameters FIRST (Hume passes it here!)
     session_id = request.query_params.get("custom_session_id") or request.query_params.get("customSessionId")
     if session_id:
-        print(f"[PENELOPE] Session ID from query params: {session_id}", file=sys.stderr)
+        print(f"[DIONYSUS] Session ID from query params: {session_id}", file=sys.stderr)
         return session_id
 
     # Check body fields (Hume forwards session settings here)
@@ -650,7 +647,7 @@ async def chat_completions(request: Request):
         if sys_id:
             user_id = sys_id
 
-        print(f"[PENELOPE] User: {user_name}, ID: {user_id}, Zep context: {bool(zep_context)}", file=sys.stderr)
+        print(f"[DIONYSUS] User: {user_name}, ID: {user_id}, Zep context: {bool(zep_context)}", file=sys.stderr)
 
         # Extract user message
         user_message = ""
@@ -674,12 +671,12 @@ async def chat_completions(request: Request):
             prompt = f"[User's name is {user_name}] {user_message}"
 
         # Run agent
-        deps = PenelopeDeps(session_id=session_id or str(uuid.uuid4()), user_id=user_id)
-        result = await penelope_agent.run(prompt, deps=deps)
+        deps = DionysusDeps(session_id=session_id or str(uuid.uuid4()), user_id=user_id)
+        result = await dionysus_agent.run(prompt, deps=deps)
 
         # Extract the response - use result.output (same pattern as working agents)
         response_text = result.output if hasattr(result, 'output') else str(result.data)
-        print(f"[PENELOPE] Response: {response_text[:100]}...", file=sys.stderr)
+        print(f"[DIONYSUS] Response: {response_text[:100]}...", file=sys.stderr)
 
         if stream:
             async def stream_response() -> AsyncGenerator[str, None]:
@@ -688,7 +685,7 @@ async def chat_completions(request: Request):
                     "id": f"chatcmpl-{uuid.uuid4()}",
                     "object": "chat.completion.chunk",
                     "created": int(time.time()),
-                    "model": "penelope-1.0",
+                    "model": "dionysus-1.0",
                     "choices": [{
                         "index": 0,
                         "delta": {"role": "assistant", "content": response_text},
@@ -702,7 +699,7 @@ async def chat_completions(request: Request):
                     "id": f"chatcmpl-{uuid.uuid4()}",
                     "object": "chat.completion.chunk",
                     "created": int(time.time()),
-                    "model": "penelope-1.0",
+                    "model": "dionysus-1.0",
                     "choices": [{
                         "index": 0,
                         "delta": {},
@@ -725,7 +722,7 @@ async def chat_completions(request: Request):
                 "id": f"chatcmpl-{uuid.uuid4()}",
                 "object": "chat.completion",
                 "created": int(time.time()),
-                "model": "penelope-1.0",
+                "model": "dionysus-1.0",
                 "choices": [{
                     "index": 0,
                     "message": {"role": "assistant", "content": response_text},
@@ -735,7 +732,7 @@ async def chat_completions(request: Request):
             }
 
     except Exception as e:
-        print(f"[PENELOPE] Error in chat/completions: {e}", file=sys.stderr)
+        print(f"[DIONYSUS] Error in chat/completions: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         return {"error": str(e)}, 500
@@ -770,8 +767,8 @@ async def copilotkit_endpoint(request: Request):
             user_message = "Hello!"
 
         session_id = str(uuid.uuid4())
-        deps = PenelopeDeps(session_id=session_id)
-        result = await penelope_agent.run(user_message, deps=deps)
+        deps = DionysusDeps(session_id=session_id)
+        result = await dionysus_agent.run(user_message, deps=deps)
 
         # Extract the response - use result.output (same pattern as working agents)
         response_text = result.output if hasattr(result, 'output') else str(result.data)
@@ -784,7 +781,7 @@ async def copilotkit_endpoint(request: Request):
         }
 
     except Exception as e:
-        print(f"[PENELOPE] Error in copilotkit: {e}", file=sys.stderr)
+        print(f"[DIONYSUS] Error in copilotkit: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         return {"error": str(e)}, 500

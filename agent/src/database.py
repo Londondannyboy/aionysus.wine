@@ -1,5 +1,5 @@
 """
-Database queries for Penelope UK Pension Advisor Agent
+Database queries for Dionysus Wine Sommelier Agent
 """
 
 import os
@@ -45,445 +45,329 @@ async def get_connection() -> AsyncGenerator[asyncpg.Connection, None]:
 
 
 # =============================================================================
-# PENSION SCHEME QUERIES
+# WINE QUERIES
 # =============================================================================
 
-async def get_all_schemes() -> List[Dict[str, Any]]:
-    """Get all pension schemes from database."""
+async def get_all_wines(limit: int = 50) -> List[Dict[str, Any]]:
+    """Get wines from database."""
     try:
         async with get_connection() as conn:
             rows = await conn.fetch("""
-                SELECT id, slug, name, provider, scheme_type,
-                       annual_management_charge, platform_fee,
-                       min_contribution, employer_match_percent,
-                       fund_options, default_fund,
-                       sipp_available, drawdown_available,
-                       fca_regulated, performance_rating,
-                       features, suitable_for
-                FROM pension_schemes
+                SELECT id, name, slug, winery, region, country, grape_variety,
+                       vintage, wine_type, style, color, price_retail, price_trade,
+                       bottle_size, tasting_notes, image_url, stock_quantity,
+                       case_size, classification
+                FROM wines
+                WHERE is_active = true
                 ORDER BY name
-            """)
-            print(f"[PENELOPE DB] Retrieved {len(rows)} pension schemes", file=sys.stderr)
-            return [dict(row) for row in rows]
-    except Exception as e:
-        print(f"[PENELOPE DB] Error fetching schemes: {e}", file=sys.stderr)
-        return []
-
-
-async def get_scheme_by_name(name: str) -> Optional[Dict[str, Any]]:
-    """Get pension scheme by name (fuzzy match)."""
-    try:
-        async with get_connection() as conn:
-            # Try exact match first
-            row = await conn.fetchrow("""
-                SELECT id, slug, name, provider, scheme_type,
-                       annual_management_charge, platform_fee,
-                       min_contribution, employer_match_percent,
-                       fund_options, default_fund,
-                       sipp_available, drawdown_available,
-                       fca_regulated, performance_rating,
-                       features, suitable_for
-                FROM pension_schemes
-                WHERE LOWER(name) = LOWER($1)
-            """, name)
-
-            if row:
-                print(f"[PENELOPE DB] Found exact scheme match: {row['name']}", file=sys.stderr)
-                return dict(row)
-
-            # Try fuzzy match
-            row = await conn.fetchrow("""
-                SELECT id, slug, name, provider, scheme_type,
-                       annual_management_charge, platform_fee,
-                       min_contribution, employer_match_percent,
-                       fund_options, default_fund,
-                       sipp_available, drawdown_available,
-                       fca_regulated, performance_rating,
-                       features, suitable_for
-                FROM pension_schemes
-                WHERE LOWER(name) LIKE LOWER($1)
-                   OR LOWER(provider) LIKE LOWER($1)
-                ORDER BY
-                    CASE WHEN LOWER(name) = LOWER($2) THEN 0 ELSE 1 END
-                LIMIT 1
-            """, f"%{name}%", name)
-
-            if row:
-                print(f"[PENELOPE DB] Found fuzzy scheme match: {row['name']}", file=sys.stderr)
-                return dict(row)
-
-            print(f"[PENELOPE DB] No scheme found for: {name}", file=sys.stderr)
-            return None
-    except Exception as e:
-        print(f"[PENELOPE DB] Error fetching scheme by name: {e}", file=sys.stderr)
-        return None
-
-
-async def search_schemes(query: str) -> List[Dict[str, Any]]:
-    """Search pension schemes by name, provider, or type."""
-    try:
-        async with get_connection() as conn:
-            rows = await conn.fetch("""
-                SELECT id, slug, name, provider, scheme_type,
-                       annual_management_charge, platform_fee,
-                       min_contribution, employer_match_percent,
-                       fund_options, default_fund,
-                       sipp_available, drawdown_available,
-                       fca_regulated, performance_rating,
-                       features, suitable_for
-                FROM pension_schemes
-                WHERE LOWER(name) LIKE LOWER($1)
-                   OR LOWER(provider) LIKE LOWER($1)
-                   OR LOWER(scheme_type) LIKE LOWER($1)
-                   OR LOWER(default_fund) LIKE LOWER($1)
-                ORDER BY performance_rating DESC NULLS LAST, name
-                LIMIT 10
-            """, f"%{query}%")
-            return [dict(row) for row in rows]
-    except Exception as e:
-        print(f"[PENELOPE DB] Error searching schemes: {e}", file=sys.stderr)
-        return []
-
-
-async def get_schemes_by_type(scheme_type: str) -> List[Dict[str, Any]]:
-    """Get pension schemes by type (workplace, sipp, personal, stakeholder)."""
-    try:
-        async with get_connection() as conn:
-            rows = await conn.fetch("""
-                SELECT id, slug, name, provider, scheme_type,
-                       annual_management_charge, platform_fee,
-                       min_contribution, employer_match_percent,
-                       fund_options, default_fund,
-                       sipp_available, drawdown_available,
-                       fca_regulated, performance_rating,
-                       features, suitable_for
-                FROM pension_schemes
-                WHERE LOWER(scheme_type) = LOWER($1)
-                ORDER BY performance_rating DESC NULLS LAST, name
-                LIMIT 10
-            """, scheme_type)
-            return [dict(row) for row in rows]
-    except Exception as e:
-        print(f"[PENELOPE DB] Error fetching schemes by type: {e}", file=sys.stderr)
-        return []
-
-
-async def get_scheme_details(scheme_id: int) -> Optional[Dict[str, Any]]:
-    """Get detailed pension scheme information by ID."""
-    try:
-        async with get_connection() as conn:
-            row = await conn.fetchrow("""
-                SELECT *
-                FROM pension_schemes
-                WHERE id = $1
-            """, scheme_id)
-            return dict(row) if row else None
-    except Exception as e:
-        print(f"[PENELOPE DB] Error fetching scheme details: {e}", file=sys.stderr)
-        return None
-
-
-async def get_schemes_by_fee_range(max_amc: float) -> List[Dict[str, Any]]:
-    """Get pension schemes with AMC below a threshold."""
-    try:
-        async with get_connection() as conn:
-            rows = await conn.fetch("""
-                SELECT id, slug, name, provider, scheme_type,
-                       annual_management_charge, platform_fee,
-                       min_contribution, fund_options,
-                       fca_regulated, performance_rating
-                FROM pension_schemes
-                WHERE annual_management_charge <= $1
-                ORDER BY annual_management_charge ASC, performance_rating DESC NULLS LAST
-                LIMIT 10
-            """, max_amc)
-            return [dict(row) for row in rows]
-    except Exception as e:
-        print(f"[PENELOPE DB] Error fetching schemes by fee: {e}", file=sys.stderr)
-        return []
-
-
-async def get_top_rated_schemes(limit: int = 10) -> List[Dict[str, Any]]:
-    """Get top-rated pension schemes."""
-    try:
-        async with get_connection() as conn:
-            rows = await conn.fetch("""
-                SELECT id, slug, name, provider, scheme_type,
-                       annual_management_charge, platform_fee,
-                       min_contribution, fund_options,
-                       fca_regulated, performance_rating
-                FROM pension_schemes
-                WHERE performance_rating IS NOT NULL
-                ORDER BY performance_rating DESC
                 LIMIT $1
             """, limit)
+            print(f"[DIONYSUS DB] Retrieved {len(rows)} wines", file=sys.stderr)
             return [dict(row) for row in rows]
     except Exception as e:
-        print(f"[PENELOPE DB] Error fetching top rated schemes: {e}", file=sys.stderr)
+        print(f"[DIONYSUS DB] Error fetching wines: {e}", file=sys.stderr)
         return []
 
 
-async def compare_scheme_fees(scheme_names: List[str]) -> List[Dict[str, Any]]:
-    """Get fee information for multiple schemes for comparison."""
-    try:
-        async with get_connection() as conn:
-            # Build query for multiple schemes
-            placeholders = ', '.join(f'${i+1}' for i in range(len(scheme_names)))
-            query = f"""
-                SELECT name, provider, annual_management_charge, platform_fee
-                FROM pension_schemes
-                WHERE LOWER(name) = ANY(ARRAY[{placeholders}]::text[])
-                   OR LOWER(provider) = ANY(ARRAY[{placeholders}]::text[])
-            """
-            lower_names = [n.lower() for n in scheme_names]
-            rows = await conn.fetch(query, *lower_names, *lower_names)
-            return [dict(row) for row in rows]
-    except Exception as e:
-        print(f"[PENELOPE DB] Error comparing scheme fees: {e}", file=sys.stderr)
-        return []
-
-
-# =============================================================================
-# PENSION FUND QUERIES
-# =============================================================================
-
-async def get_scheme_funds(scheme_id: int) -> List[Dict[str, Any]]:
-    """Get all funds available in a pension scheme."""
-    try:
-        async with get_connection() as conn:
-            rows = await conn.fetch("""
-                SELECT id, fund_name, fund_type, risk_level,
-                       annual_return_1y, annual_return_5y,
-                       ongoing_charge, asset_allocation
-                FROM pension_funds
-                WHERE scheme_id = $1
-                ORDER BY fund_type, fund_name
-            """, scheme_id)
-            return [dict(row) for row in rows]
-    except Exception as e:
-        print(f"[PENELOPE DB] Error fetching scheme funds: {e}", file=sys.stderr)
-        return []
-
-
-async def get_funds_by_type(fund_type: str) -> List[Dict[str, Any]]:
-    """Get funds by type (equity, bond, mixed, property, cash)."""
-    try:
-        async with get_connection() as conn:
-            rows = await conn.fetch("""
-                SELECT pf.id, pf.fund_name, pf.fund_type, pf.risk_level,
-                       pf.annual_return_1y, pf.annual_return_5y,
-                       pf.ongoing_charge, ps.name as scheme_name
-                FROM pension_funds pf
-                JOIN pension_schemes ps ON pf.scheme_id = ps.id
-                WHERE LOWER(pf.fund_type) = LOWER($1)
-                ORDER BY pf.annual_return_5y DESC NULLS LAST
-                LIMIT 10
-            """, fund_type)
-            return [dict(row) for row in rows]
-    except Exception as e:
-        print(f"[PENELOPE DB] Error fetching funds by type: {e}", file=sys.stderr)
-        return []
-
-
-async def get_funds_by_risk_level(risk_level: int) -> List[Dict[str, Any]]:
-    """Get funds by risk level (1-7)."""
-    try:
-        async with get_connection() as conn:
-            rows = await conn.fetch("""
-                SELECT pf.id, pf.fund_name, pf.fund_type, pf.risk_level,
-                       pf.annual_return_1y, pf.annual_return_5y,
-                       pf.ongoing_charge, ps.name as scheme_name
-                FROM pension_funds pf
-                JOIN pension_schemes ps ON pf.scheme_id = ps.id
-                WHERE pf.risk_level = $1
-                ORDER BY pf.annual_return_5y DESC NULLS LAST
-                LIMIT 10
-            """, risk_level)
-            return [dict(row) for row in rows]
-    except Exception as e:
-        print(f"[PENELOPE DB] Error fetching funds by risk level: {e}", file=sys.stderr)
-        return []
-
-
-# =============================================================================
-# USER & PREFERENCES QUERIES
-# =============================================================================
-
-async def get_user_profile(user_id: str) -> Optional[Dict[str, Any]]:
-    """Get user profile from database."""
+async def get_wine_by_slug(slug: str) -> Optional[Dict[str, Any]]:
+    """Get wine by URL slug."""
     try:
         async with get_connection() as conn:
             row = await conn.fetchrow("""
-                SELECT * FROM user_profiles WHERE user_id = $1
-            """, user_id)
-            return dict(row) if row else None
+                SELECT id, name, slug, winery, region, country, grape_variety,
+                       vintage, wine_type, style, color, price_retail, price_trade,
+                       bottle_size, tasting_notes, image_url, stock_quantity,
+                       case_size, classification, original_url, aionysus_url
+                FROM wines
+                WHERE slug = $1 AND is_active = true
+            """, slug)
+            if row:
+                print(f"[DIONYSUS DB] Found wine: {row['name']}", file=sys.stderr)
+                return dict(row)
+            return None
     except Exception as e:
-        print(f"[PENELOPE DB] Error fetching user profile: {e}", file=sys.stderr)
+        print(f"[DIONYSUS DB] Error fetching wine by slug: {e}", file=sys.stderr)
         return None
 
 
-async def get_user_pension_selections(user_id: str) -> List[Dict[str, Any]]:
-    """Get user's tracked/saved pension schemes."""
+async def get_wine_by_id(wine_id: int) -> Optional[Dict[str, Any]]:
+    """Get wine by ID."""
     try:
         async with get_connection() as conn:
-            rows = await conn.fetch("""
-                SELECT ps.*
-                FROM user_pension_selections ups
-                JOIN pension_schemes ps ON ups.scheme_id = ps.id
-                WHERE ups.user_id = $1
-                ORDER BY ups.created_at DESC
-            """, user_id)
+            row = await conn.fetchrow("""
+                SELECT id, name, slug, winery, region, country, grape_variety,
+                       vintage, wine_type, style, color, price_retail, price_trade,
+                       bottle_size, tasting_notes, image_url, stock_quantity,
+                       case_size, classification
+                FROM wines
+                WHERE id = $1 AND is_active = true
+            """, wine_id)
+            return dict(row) if row else None
+    except Exception as e:
+        print(f"[DIONYSUS DB] Error fetching wine by id: {e}", file=sys.stderr)
+        return None
+
+
+async def search_wines(
+    query: Optional[str] = None,
+    region: Optional[str] = None,
+    country: Optional[str] = None,
+    producer: Optional[str] = None,
+    grape: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    vintage: Optional[int] = None,
+    limit: int = 10
+) -> List[Dict[str, Any]]:
+    """Search wines with multiple filters."""
+    try:
+        async with get_connection() as conn:
+            # Build dynamic query
+            conditions = ["is_active = true"]
+            params = []
+            param_count = 0
+
+            if query:
+                param_count += 1
+                conditions.append(f"""(
+                    LOWER(name) LIKE LOWER(${param_count}) OR
+                    LOWER(winery) LIKE LOWER(${param_count}) OR
+                    LOWER(region) LIKE LOWER(${param_count}) OR
+                    LOWER(grape_variety) LIKE LOWER(${param_count})
+                )""")
+                params.append(f"%{query}%")
+
+            if region:
+                param_count += 1
+                conditions.append(f"LOWER(region) LIKE LOWER(${param_count})")
+                params.append(f"%{region}%")
+
+            if country:
+                param_count += 1
+                conditions.append(f"LOWER(country) LIKE LOWER(${param_count})")
+                params.append(f"%{country}%")
+
+            if producer:
+                param_count += 1
+                conditions.append(f"LOWER(winery) LIKE LOWER(${param_count})")
+                params.append(f"%{producer}%")
+
+            if grape:
+                param_count += 1
+                conditions.append(f"LOWER(grape_variety) LIKE LOWER(${param_count})")
+                params.append(f"%{grape}%")
+
+            if min_price:
+                param_count += 1
+                conditions.append(f"price_retail >= ${param_count}")
+                params.append(min_price)
+
+            if max_price:
+                param_count += 1
+                conditions.append(f"price_retail <= ${param_count}")
+                params.append(max_price)
+
+            if vintage:
+                param_count += 1
+                conditions.append(f"vintage = ${param_count}")
+                params.append(vintage)
+
+            param_count += 1
+            params.append(limit)
+
+            sql = f"""
+                SELECT id, name, slug, winery, region, country, grape_variety,
+                       vintage, wine_type, style, color, price_retail,
+                       bottle_size, image_url
+                FROM wines
+                WHERE {' AND '.join(conditions)}
+                ORDER BY price_retail ASC NULLS LAST
+                LIMIT ${param_count}
+            """
+
+            rows = await conn.fetch(sql, *params)
+            print(f"[DIONYSUS DB] Search returned {len(rows)} wines", file=sys.stderr)
             return [dict(row) for row in rows]
     except Exception as e:
-        print(f"[PENELOPE DB] Error fetching user selections: {e}", file=sys.stderr)
+        print(f"[DIONYSUS DB] Error searching wines: {e}", file=sys.stderr)
         return []
 
 
-async def add_user_pension_selection(user_id: str, scheme_id: int, notes: Optional[str] = None) -> bool:
-    """Add a pension scheme to user's tracked list."""
+async def get_wines_by_region(region: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Get wines from a specific region."""
     try:
         async with get_connection() as conn:
-            await conn.execute("""
-                INSERT INTO user_pension_selections (user_id, scheme_id, notes)
-                VALUES ($1, $2, $3)
-                ON CONFLICT (user_id, scheme_id) DO UPDATE SET notes = $3
-            """, user_id, scheme_id, notes)
-            return True
+            rows = await conn.fetch("""
+                SELECT id, name, slug, winery, region, country, grape_variety,
+                       vintage, price_retail, image_url
+                FROM wines
+                WHERE LOWER(region) LIKE LOWER($1) AND is_active = true
+                ORDER BY price_retail ASC NULLS LAST
+                LIMIT $2
+            """, f"%{region}%", limit)
+            return [dict(row) for row in rows]
     except Exception as e:
-        print(f"[PENELOPE DB] Error adding pension selection: {e}", file=sys.stderr)
-        return False
+        print(f"[DIONYSUS DB] Error fetching wines by region: {e}", file=sys.stderr)
+        return []
 
 
-async def save_recommendation(
-    user_id: Optional[str],
-    session_id: str,
-    scheme_ids: List[int],
-    context: Dict[str, Any]
-) -> Optional[int]:
-    """Save a pension recommendation to the database."""
+async def get_wines_by_producer(producer: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Get wines from a specific producer/winery."""
     try:
-        import json
-        from datetime import datetime
-
         async with get_connection() as conn:
-            result = await conn.fetchrow("""
-                INSERT INTO pension_recommendations (user_id, session_id, scheme_ids, context, created_at)
-                VALUES ($1, $2, $3, $4, $5)
-                RETURNING id
-            """, user_id, session_id, scheme_ids, json.dumps(context), datetime.now())
-
-            print(f"[PENELOPE DB] Saved recommendation for session {session_id}", file=sys.stderr)
-            return result["id"] if result else None
+            rows = await conn.fetch("""
+                SELECT id, name, slug, winery, region, country, grape_variety,
+                       vintage, price_retail, image_url
+                FROM wines
+                WHERE LOWER(winery) LIKE LOWER($1) AND is_active = true
+                ORDER BY vintage DESC NULLS LAST
+                LIMIT $2
+            """, f"%{producer}%", limit)
+            return [dict(row) for row in rows]
     except Exception as e:
-        print(f"[PENELOPE DB] Error saving recommendation: {e}", file=sys.stderr)
-        return None
+        print(f"[DIONYSUS DB] Error fetching wines by producer: {e}", file=sys.stderr)
+        return []
+
+
+async def get_wines_by_price_range(
+    min_price: float,
+    max_price: float,
+    limit: int = 10
+) -> List[Dict[str, Any]]:
+    """Get wines within a price range."""
+    try:
+        async with get_connection() as conn:
+            rows = await conn.fetch("""
+                SELECT id, name, slug, winery, region, country, grape_variety,
+                       vintage, price_retail, image_url
+                FROM wines
+                WHERE price_retail >= $1 AND price_retail <= $2 AND is_active = true
+                ORDER BY price_retail ASC
+                LIMIT $3
+            """, min_price, max_price, limit)
+            return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"[DIONYSUS DB] Error fetching wines by price: {e}", file=sys.stderr)
+        return []
+
+
+async def get_regions() -> List[str]:
+    """Get all unique wine regions."""
+    try:
+        async with get_connection() as conn:
+            rows = await conn.fetch("""
+                SELECT DISTINCT region
+                FROM wines
+                WHERE region IS NOT NULL AND is_active = true
+                ORDER BY region
+            """)
+            return [row['region'] for row in rows]
+    except Exception as e:
+        print(f"[DIONYSUS DB] Error fetching regions: {e}", file=sys.stderr)
+        return []
+
+
+async def get_producers() -> List[str]:
+    """Get all unique producers/wineries."""
+    try:
+        async with get_connection() as conn:
+            rows = await conn.fetch("""
+                SELECT DISTINCT winery
+                FROM wines
+                WHERE winery IS NOT NULL AND is_active = true
+                ORDER BY winery
+                LIMIT 100
+            """)
+            return [row['winery'] for row in rows]
+    except Exception as e:
+        print(f"[DIONYSUS DB] Error fetching producers: {e}", file=sys.stderr)
+        return []
+
+
+async def get_wine_stats() -> Dict[str, Any]:
+    """Get wine collection statistics."""
+    try:
+        async with get_connection() as conn:
+            row = await conn.fetchrow("""
+                SELECT
+                    COUNT(*) as total_wines,
+                    COUNT(DISTINCT region) as unique_regions,
+                    COUNT(DISTINCT winery) as unique_producers,
+                    COUNT(DISTINCT vintage) as unique_vintages,
+                    MIN(price_retail) as min_price,
+                    MAX(price_retail) as max_price,
+                    AVG(price_retail)::numeric(10,2) as avg_price
+                FROM wines
+                WHERE is_active = true
+            """)
+            return dict(row) if row else {}
+    except Exception as e:
+        print(f"[DIONYSUS DB] Error fetching stats: {e}", file=sys.stderr)
+        return {}
 
 
 # =============================================================================
-# PENSION KNOWLEDGE DATA (Static - for educational responses)
+# WINE KNOWLEDGE DATA
 # =============================================================================
 
-PENSION_TYPES = {
-    "workplace": {
-        "name": "Workplace Pension",
-        "description": "Auto-enrolment pension provided by your employer",
-        "key_features": [
-            "Employer contributes minimum 3%",
-            "Employee contributes minimum 5%",
-            "Tax relief automatic",
-            "Usually lower fees due to scale"
-        ],
-        "suitable_for": ["Employees", "Those wanting employer contributions", "Hands-off investors"],
-        "examples": ["NEST", "People's Pension", "NOW: Pensions", "Smart Pension"]
+WINE_REGIONS = {
+    "burgundy": {
+        "name": "Burgundy",
+        "country": "France",
+        "description": "Home to some of the world's finest Pinot Noir and Chardonnay",
+        "key_grapes": ["Pinot Noir", "Chardonnay"],
+        "notable_appellations": ["Gevrey-Chambertin", "Vosne-Romanée", "Meursault", "Puligny-Montrachet"],
+        "food_pairings": ["Duck", "Mushrooms", "Grilled fish", "Creamy sauces"]
     },
-    "sipp": {
-        "name": "Self-Invested Personal Pension (SIPP)",
-        "description": "Personal pension with full investment control",
-        "key_features": [
-            "Choose your own investments",
-            "Wide range of funds, stocks, ETFs",
-            "Flexible contributions",
-            "Can consolidate old pensions"
-        ],
-        "suitable_for": ["DIY investors", "Those wanting investment control", "Higher earners"],
-        "examples": ["Vanguard SIPP", "AJ Bell", "Hargreaves Lansdown", "Fidelity", "Interactive Investor"]
+    "bordeaux": {
+        "name": "Bordeaux",
+        "country": "France",
+        "description": "Famous for prestigious red blends and sweet wines",
+        "key_grapes": ["Cabernet Sauvignon", "Merlot", "Cabernet Franc"],
+        "notable_appellations": ["Pauillac", "Saint-Émilion", "Pomerol", "Margaux"],
+        "food_pairings": ["Lamb", "Beef", "Hard cheeses", "Rich stews"]
     },
-    "personal": {
-        "name": "Personal Pension",
-        "description": "Individual pension arrangement with a provider",
-        "key_features": [
-            "Set up independently",
-            "Provider manages investments",
-            "Regular or one-off contributions",
-            "Good for self-employed"
-        ],
-        "suitable_for": ["Self-employed", "Those without workplace pension", "Additional pension savings"],
-        "examples": ["Aviva", "Scottish Widows", "Legal & General", "Standard Life"]
+    "champagne": {
+        "name": "Champagne",
+        "country": "France",
+        "description": "The world's most celebrated sparkling wine region",
+        "key_grapes": ["Chardonnay", "Pinot Noir", "Pinot Meunier"],
+        "notable_houses": ["Krug", "Dom Pérignon", "Bollinger", "Ruinart"],
+        "food_pairings": ["Oysters", "Caviar", "Canapés", "Celebration dishes"]
     },
-    "stakeholder": {
-        "name": "Stakeholder Pension",
-        "description": "Simple pension with capped charges",
-        "key_features": [
-            "Maximum 1.5% annual charge",
-            "Flexible contributions",
-            "Default investment option",
-            "Must accept transfers"
-        ],
-        "suitable_for": ["Those wanting simplicity", "Low-cost option", "Beginners"],
-        "examples": ["Many providers offer stakeholder options"]
+    "barolo": {
+        "name": "Barolo/Piedmont",
+        "country": "Italy",
+        "description": "The 'King of Wines' from Nebbiolo grapes",
+        "key_grapes": ["Nebbiolo", "Barbera", "Dolcetto"],
+        "notable_areas": ["Barolo", "Barbaresco", "Langhe"],
+        "food_pairings": ["Truffle dishes", "Braised meats", "Rich pastas", "Aged cheeses"]
     },
-    "state": {
-        "name": "State Pension",
-        "description": "Government pension based on National Insurance contributions",
-        "key_features": [
-            "Need 35 years NI for full amount",
-            "Currently £221.20/week (2024/25)",
-            "State pension age 66 (rising to 67)",
-            "Triple lock protection"
-        ],
-        "suitable_for": ["Everyone - builds automatically", "Foundation of retirement income"],
-        "examples": ["Check entitlement at gov.uk/check-state-pension"]
+    "rhone": {
+        "name": "Rhône Valley",
+        "country": "France",
+        "description": "Diverse region producing powerful reds and aromatic whites",
+        "key_grapes": ["Syrah", "Grenache", "Viognier", "Roussanne"],
+        "notable_appellations": ["Hermitage", "Côte-Rôtie", "Châteauneuf-du-Pape"],
+        "food_pairings": ["Game", "Grilled meats", "Provençal cuisine"]
     }
 }
 
-PENSION_TIPS = {
-    "employer_match": {
-        "tip": "Always get your employer match - it's free money!",
-        "explanation": "If your employer matches contributions, try to contribute at least enough to get the full match. It's an instant 100% return."
-    },
-    "tax_relief": {
-        "tip": "Tax relief means you get 20-45% of your contribution back",
-        "explanation": "Basic rate taxpayers get 20% added automatically. Higher rate taxpayers can claim extra 20-25% through self-assessment."
-    },
-    "fees_matter": {
-        "tip": "Lower fees compound to big savings over decades",
-        "explanation": "A 1% difference in fees can mean tens of thousands less at retirement over 30+ years."
-    },
-    "start_early": {
-        "tip": "It's never too late to start - but the earlier the better",
-        "explanation": "Compound growth means money invested in your 20s is worth more than money invested in your 40s."
-    },
-    "consolidate": {
-        "tip": "Consider consolidating old pensions for simplicity",
-        "explanation": "Multiple old pensions can be hard to track. Consolidating makes planning easier, but check for exit fees first."
-    },
-    "state_pension": {
-        "tip": "The state pension alone won't maintain most people's lifestyle",
-        "explanation": "Full state pension is about £11,500/year. Most people need 2/3 of their working income in retirement."
-    }
+FOOD_PAIRINGS = {
+    "red_meat": ["Cabernet Sauvignon", "Bordeaux blends", "Barolo", "Syrah"],
+    "poultry": ["Pinot Noir", "Burgundy", "Chardonnay", "Beaujolais"],
+    "fish": ["Chablis", "Sancerre", "Muscadet", "White Burgundy"],
+    "shellfish": ["Champagne", "Muscadet", "Albariño", "Chablis"],
+    "cheese": ["Port", "Sauternes", "Aged Burgundy", "Amarone"],
+    "dessert": ["Sauternes", "Port", "Late Harvest Riesling", "Moscato"]
 }
 
 
-def get_pension_type_info(pension_type: str) -> Optional[Dict[str, Any]]:
-    """Get information about a pension type."""
-    return PENSION_TYPES.get(pension_type.lower())
+def get_region_info(region: str) -> Optional[Dict[str, Any]]:
+    """Get information about a wine region."""
+    return WINE_REGIONS.get(region.lower())
 
 
-def get_pension_tip(tip_key: str) -> Optional[Dict[str, Any]]:
-    """Get a specific pension tip."""
-    return PENSION_TIPS.get(tip_key)
-
-
-def get_all_pension_tips() -> Dict[str, Dict[str, Any]]:
-    """Get all pension tips."""
-    return PENSION_TIPS
+def get_food_pairing_wines(food: str) -> List[str]:
+    """Get wine suggestions for a food type."""
+    return FOOD_PAIRINGS.get(food.lower(), [])

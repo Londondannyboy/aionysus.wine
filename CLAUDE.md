@@ -1,12 +1,12 @@
-# Pension Quest
+# Aionysus Wine - AI Sommelier
 
 > **Cole Medin Methodology**: PRD-first, modular rules, command-ify, context reset, system evolution.
 
 ## Quick Start
 
 ```bash
-# Frontend (port 4000 to avoid conflicts)
-npm run dev -- -p 4000              # -> localhost:4000
+# Frontend (Next.js)
+npm run dev              # -> localhost:3000
 
 # Agent (Pydantic AI on Railway)
 cd agent && source .venv/bin/activate
@@ -15,9 +15,9 @@ uvicorn src.agent:app --reload --port 8000
 
 ## Current Architecture
 
-Single-page conversational AI pension advisor. CopilotKit Next.js runtime with Gemini adapter. Pension scheme and fund data from Neon PostgreSQL.
+Wine e-commerce platform with AI sommelier. CopilotKit chat + Hume EVI voice. 3,906 wines from Goedhuis Waddesdon in Neon PostgreSQL. Shopify Storefront API for cart/checkout.
 
-**Pattern**: CopilotKit runtime inside Next.js API route + Pydantic AI agent on Railway for voice.
+**Pattern**: Next.js frontend + CopilotKit runtime + Pydantic AI agent on Railway for voice CLM.
 
 ---
 
@@ -26,12 +26,17 @@ Single-page conversational AI pension advisor. CopilotKit Next.js runtime with G
 | Purpose | Location |
 |---------|----------|
 | Main page | `src/app/page.tsx` |
+| Wine listing | `src/app/wines/page.tsx` |
+| Wine detail | `src/app/wines/[slug]/page.tsx` |
+| Cart page | `src/app/cart/page.tsx` |
 | CopilotKit provider | `src/components/providers.tsx` |
 | CopilotKit runtime | `src/app/api/copilotkit/route.ts` |
-| Pensions API | `src/app/api/pensions/route.ts` |
-| Database queries (frontend) | `src/lib/pension-db.ts` |
+| Wines API | `src/app/api/wines/route.ts` |
+| Database queries (frontend) | `src/lib/wine-db.ts` |
+| Shopify client | `src/lib/shopify.ts` |
 | Hume voice widget | `src/components/HumeWidget.tsx` |
 | Hume token API | `src/app/api/hume-token/route.ts` |
+| Zep context API | `src/app/api/zep-context/route.ts` |
 | Neon Auth client | `src/lib/auth/client.ts` |
 | Neon Auth server | `src/lib/auth/server.ts` |
 | **Pydantic AI Agent (Railway)** | |
@@ -46,66 +51,69 @@ Single-page conversational AI pension advisor. CopilotKit Next.js runtime with G
 
 | Action | Purpose |
 |--------|---------|
-| `search_pension_schemes` | Search pension schemes by name, provider, or type |
-| `get_scheme_details` | Display detailed pension scheme information |
-| `calculate_retirement_income` | Estimate retirement income based on contributions |
-| `compare_pension_fees` | Compare fees between pension schemes |
-| `compare_schemes` | Compare multiple schemes side by side |
-| `get_schemes_by_type` | Get schemes by type (workplace, SIPP, personal) |
+| `search_wines` | Search wines by name, region, producer, grape, price |
+| `get_wine_details` | Display detailed wine information by slug |
 
 ---
 
 ## Database (Neon)
 
+Project ID: `icy-art-05281051` (aionysus.wine)
+
 | Table | Purpose |
 |-------|---------|
-| pension_schemes | Pension scheme catalog with details and ratings |
-| pension_funds | Funds available within each scheme |
-| user_profiles | User account data and preferences |
-| user_pension_selections | User's saved/tracked pension schemes |
-| pension_recommendations | AI-generated recommendation history |
+| wines_original | Raw scraped wine data with all fields |
+| wine_price_variants | Shopify price variants for each wine |
+| wines | Compatibility view mapping to wines_original |
 
-### Pension Schemes Table Schema
+### Wines Table Schema
 
 ```sql
-pension_schemes (
+wines_original (
   id SERIAL PRIMARY KEY,
+  handle VARCHAR(255),
+  title VARCHAR(500),
+  vendor VARCHAR(255),
+  product_type VARCHAR(100),
+  tags TEXT[],
+  price_min DECIMAL(10,2),
+  price_max DECIMAL(10,2),
+  image_url TEXT,
+  original_url TEXT,
+  original_raw_json JSONB,
+  -- Parsed fields
+  name VARCHAR(500),
   slug VARCHAR(255) UNIQUE,
-  name VARCHAR(255) NOT NULL,
-  provider VARCHAR(255),
-  scheme_type VARCHAR(50),  -- workplace, sipp, personal, stakeholder
-  annual_management_charge DECIMAL(5,3),  -- e.g., 0.750 for 0.75%
-  platform_fee DECIMAL(5,3),
-  min_contribution INTEGER,  -- minimum monthly contribution
-  employer_match_percent DECIMAL(5,2),
-  fund_options INTEGER,  -- number of funds available
-  default_fund VARCHAR(255),
-  sipp_available BOOLEAN DEFAULT false,
-  drawdown_available BOOLEAN DEFAULT false,
-  fca_regulated BOOLEAN DEFAULT true,
-  performance_rating INTEGER,  -- 1-5 stars
-  features TEXT[],
-  suitable_for TEXT[],
+  winery VARCHAR(255),
+  region VARCHAR(255),
+  country VARCHAR(100),
+  grape_variety VARCHAR(255),
+  vintage INTEGER,
+  wine_type VARCHAR(50),
+  style VARCHAR(100),
+  color VARCHAR(50),
+  price_retail DECIMAL(10,2),
+  price_trade DECIMAL(10,2),
+  bottle_size VARCHAR(50),
+  tasting_notes TEXT,
+  stock_quantity INTEGER,
+  case_size INTEGER,
+  classification VARCHAR(255),
+  is_active BOOLEAN DEFAULT true,
+  our_image_url TEXT,
+  aionysus_slug VARCHAR(255),
+  aionysus_url TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 )
 ```
 
-### Pension Funds Table Schema
+### Wine Stats
 
-```sql
-pension_funds (
-  id SERIAL PRIMARY KEY,
-  scheme_id INTEGER REFERENCES pension_schemes(id),
-  fund_name VARCHAR(255) NOT NULL,
-  fund_type VARCHAR(50),  -- equity, bond, mixed, property, cash
-  risk_level INTEGER,  -- 1-7 (low to high)
-  annual_return_1y DECIMAL(6,2),
-  annual_return_5y DECIMAL(6,2),
-  ongoing_charge DECIMAL(5,3),
-  asset_allocation JSONB,
-  created_at TIMESTAMP DEFAULT NOW()
-)
-```
+- **Total wines**: 3,906
+- **Price variants**: 24,341
+- **Wines with images**: 1,661
+- **Wines without images**: 2,245
+- **Existing URL mappings**: 962
 
 ---
 
@@ -120,26 +128,28 @@ Authentication powered by Neon Auth (`@neondatabase/auth`).
 
 ---
 
-## Pension Performance Ratings
+## Wine Regions
 
-| Rating | Category | Description |
-|--------|----------|-------------|
-| 5 stars | Excellent | Top-tier funds with consistent performance |
-| 4 stars | Very Good | Strong performers with competitive fees |
-| 3 stars | Good | Solid options, average fees |
-| 2 stars | Fair | Below average, higher fees |
-| 1 star | Poor | Underperforming, consider switching |
+| Region | Country | Key Grapes |
+|--------|---------|------------|
+| Burgundy | France | Pinot Noir, Chardonnay |
+| Bordeaux | France | Cabernet Sauvignon, Merlot |
+| Champagne | France | Chardonnay, Pinot Noir, Pinot Meunier |
+| Rhône | France | Syrah, Grenache, Viognier |
+| Barolo | Italy | Nebbiolo |
 
 ---
 
-## Pension Types
+## Food Pairings
 
-| Type | Description |
+| Food | Wine Styles |
 |------|-------------|
-| Workplace | Auto-enrolment pensions (NEST, People's Pension, NOW:) |
-| SIPP | Self-Invested Personal Pension (Vanguard, AJ Bell, HL) |
-| Personal | Individual pensions (Aviva, Scottish Widows, L&G) |
-| Stakeholder | Capped charges, flexible contributions |
+| Red meat | Cabernet Sauvignon, Bordeaux, Barolo, Syrah |
+| Poultry | Pinot Noir, Burgundy, Chardonnay |
+| Fish | Chablis, Sancerre, White Burgundy |
+| Shellfish | Champagne, Muscadet, Albariño |
+| Cheese | Port, Sauternes, Aged Burgundy |
+| Dessert | Sauternes, Port, Moscato |
 
 ---
 
@@ -148,36 +158,45 @@ Authentication powered by Neon Auth (`@neondatabase/auth`).
 | Layer | Technology |
 |-------|------------|
 | Frontend | Next.js 15, React 19, TypeScript, Tailwind |
-| AI Chat | CopilotKit (Next.js runtime + Gemini adapter) |
+| AI Chat | CopilotKit (Next.js runtime + AG-UI protocol) |
 | Voice | Hume EVI (@humeai/voice-react) |
 | Agent | Pydantic AI (FastAPI on Railway) |
 | Database | Neon PostgreSQL (@neondatabase/serverless) |
 | Auth | Neon Auth (@neondatabase/auth) |
+| E-commerce | Shopify Storefront API |
+| Memory | Zep Cloud (optional) |
 
 ---
 
 ## Environment Variables
 
 ```bash
-# Database (pension.quest)
-DATABASE_URL=postgresql://neondb_owner:...@ep-tiny-wildflower-abug2uqw-pooler.eu-west-2.aws.neon.tech/neondb
+# Database (aionysus.wine)
+DATABASE_URL=postgresql://... (from Neon dashboard)
 
-# CopilotKit (Gemini)
-GOOGLE_API_KEY=...
+# Shopify
+NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN=aionysus-3.myshopify.com
+NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN=... (from Shopify admin)
+SHOPIFY_ADMIN_API_TOKEN=... (from Shopify admin)
 
 # Hume EVI
-HUME_API_KEY=...
-HUME_SECRET_KEY=...
-NEXT_PUBLIC_HUME_CONFIG_ID=... (create new config for Penelope)
+HUME_API_KEY=... (from Hume dashboard)
+NEXT_PUBLIC_HUME_CONFIG_ID=29cec14d-5272-4a79-820d-382dc0d0e801
+
+# CopilotKit (Gemini)
+GOOGLE_API_KEY=... (from Google Cloud)
 
 # Agent URL (Railway - set after deployment)
 NEXT_PUBLIC_AGENT_URL=https://your-agent.up.railway.app
 
 # Neon Auth
-NEON_AUTH_BASE_URL=https://...neonauth.../neondb/auth
+NEON_AUTH_BASE_URL=... (from Neon Auth)
 
 # Zep Memory (optional)
-ZEP_API_KEY=...
+ZEP_API_KEY=... (from Zep dashboard)
+
+# Unsplash (dynamic backgrounds)
+NEXT_PUBLIC_UNSPLASH_ACCESS_KEY=... (from Unsplash developers)
 ```
 
 ---
@@ -203,8 +222,8 @@ ZEP_API_KEY=...
    - `GOOGLE_API_KEY` (for Gemini)
    - `ZEP_API_KEY` (optional)
 5. Deploy will auto-detect `railway.toml`
-6. Note the URL (e.g., `https://penelope-agent-xxx.up.railway.app`)
-7. Update `NEXT_PUBLIC_AGENT_URL` in frontend `.env.local`
+6. Note the URL (e.g., `https://dionysus-agent-xxx.up.railway.app`)
+7. Update Hume EVI CLM endpoint
 
 ### CLM Endpoint for Hume
 
@@ -217,62 +236,64 @@ Configure this in Hume Dashboard -> EVI Config -> Custom Language Model.
 
 ---
 
-## Penelope Personality
+## Dionysus Personality
 
-You are Penelope, a friendly and knowledgeable UK pension expert.
-- Clear, jargon-free explanations of complex pension topics
-- Warm and reassuring - pensions can be confusing!
-- Always mention FCA regulation where relevant
-- Concise responses (50-100 words for voice)
-- UK-focused: workplace pensions, SIPPs, state pension
-- "I'm Penelope, your pension guide. Let's make retirement planning simple!"
+You are Dionysus, a sophisticated AI wine sommelier.
+- Warm, knowledgeable, and passionate about wine
+- Like a trusted sommelier - approachable yet refined
+- Uses evocative sensory language (notes of blackcurrant, silky tannins...)
+- Never pretentious - makes wine accessible to everyone
+- "I'm Dionysus, your personal wine sommelier!"
 
 ---
 
-## UK Pension Knowledge
+## Agent Tools
 
-### Pension Types
-- **Workplace pensions** - Auto-enrolment schemes via employer
-- **Personal pensions** - Individual arrangements with providers
-- **SIPPs** - Self-Invested Personal Pensions for DIY investors
-- **State Pension** - Government pension based on NI contributions
-- **Defined Benefit** - Final salary/career average schemes (rare now)
+| Tool | Purpose |
+|------|---------|
+| `search_wines_tool` | Search by query, region, producer, grape, price, vintage |
+| `get_wine_details_tool` | Get detailed wine info by slug |
+| `get_wines_by_region_tool` | Browse wines from a region |
+| `get_wines_by_producer_tool` | Browse wines from a producer |
+| `get_wines_by_price_tool` | Browse wines in price range |
+| `get_food_pairing_tool` | Wine recommendations for food |
+| `get_region_info_tool` | Learn about wine regions |
+| `get_collection_stats_tool` | Wine collection statistics |
+| `list_regions_tool` | List available regions |
 
-### Key Numbers (2024/25)
-- Auto-enrolment minimum: 8% (3% employer, 5% employee)
-- Tax relief bands: 20%, 40%, 45%
-- Annual allowance: £60,000
-- Lifetime allowance: Abolished April 2024
-- State pension age: 66 (rising to 67 by 2028)
-- Pension freedoms: Age 55 (rising to 57 in 2028)
-- State pension (full): £221.20/week
+---
 
-### Major Providers
-- **Workplace**: NEST, People's Pension, NOW: Pensions, Smart Pension
-- **SIPP**: Vanguard, AJ Bell, Hargreaves Lansdown, Fidelity, Interactive Investor
-- **Traditional**: Aviva, Scottish Widows, Legal & General, Standard Life
+## Scraper Data
+
+All wine data scraped from https://goedhuiswaddesdon.com/collections/buy-wine
+
+**Scraper files** (in `/Users/dankeegan/aionysus-scraper/`):
+- `scrape_wines.py` - Main Shopify JSON API scraper
+- `download_images.py` - Image downloader
+- `map_urls.py` - URL mapping from existing aionysus.wine
+- `images/` - 1,661 downloaded wine images (112MB)
 
 ---
 
 ## Session Log
 
-### Jan 17, 2026
-- Full adaptation from aionysus.wine to pension.quest complete
-- Deployed Penelope agent to Railway: `https://pension-quest-agent-production.up.railway.app`
-- Deployed frontend to Vercel: `https://pension.quest`
-- Created new Hume EVI config: `aefafb5c-7400-4ebb-b3d3-98b628b8d84f`
-- Set up CLM endpoint for voice
-- Database seeded with 15 pension schemes and 8 funds
-- Removed all wine/Aionysus references from codebase
-- Updated PRD.md and CLAUDE.md documentation
-- Voice working with user personalization
+### Jan 18, 2026
+- Full conversion from pension.quest to aionysus.wine
+- Scraped 3,906 wines and 24,341 price variants from Goedhuis Waddesdon
+- Downloaded 1,661 wine images
+- Mapped 962 existing aionysus.wine URLs
+- Created wines_original table with compatibility view
+- Updated agent from Penelope (pension) to Dionysus (wine sommelier)
+- Integrated Shopify for cart/checkout
+- Added wine search, region browsing, food pairings
+- Updated all frontend pages for wine shopping
 
-### Jan 16, 2026
-- Initial adaptation from aionysus.wine (wine sommelier)
-- Created pension_schemes and pension_funds database schema
-- Built frontend with CopilotKit sidebar
-- Created Pydantic AI agent "Penelope"
-- Implemented scheme search, comparisons, retirement calculations
+### Pending
+- Fix Vercel root directory setting (remove "frontend")
+- Deploy Railway agent with wine tools
+- Add Unsplash dynamic backgrounds by region
+- Visual wine recommendations in CopilotKit chat
+- Add to cart from AI recommendations
 
 ---
 
@@ -280,19 +301,30 @@ You are Penelope, a friendly and knowledgeable UK pension expert.
 
 | Service | URL |
 |---------|-----|
-| Frontend | https://pension.quest |
-| Agent | https://pension-quest-agent-production.up.railway.app |
-| Agent Health | https://pension-quest-agent-production.up.railway.app/health |
-| CLM Endpoint | https://pension-quest-agent-production.up.railway.app/chat/completions |
-| Hume Config | aefafb5c-7400-4ebb-b3d3-98b628b8d84f |
+| Frontend | https://aionysus.wine (Vercel) |
+| Agent | TBD (Railway) |
+| GitHub | https://github.com/Londondannyboy/aionysus.wine |
+| Hume Config | 29cec14d-5272-4a79-820d-382dc0d0e801 |
 
 ---
 
 ## Test Commands
 
 Try these in the chat:
-- "What's the best SIPP for beginners?" -> searches schemes
-- "Tell me about Vanguard SIPP" -> shows scheme details
-- "Compare NEST and People's Pension" -> scheme comparison
-- "How much will I have at retirement?" -> retirement calculation
-- "What's the difference between workplace and personal pensions?" -> education
+- "Show me Burgundy wines" -> region search
+- "What Champagnes do you have?" -> region search
+- "Find wines under £50" -> price search
+- "What wine goes with steak?" -> food pairing
+- "Tell me about Bordeaux" -> region education
+- "How many wines do you have?" -> collection stats
+
+---
+
+## Next Phase Tasks
+
+1. **Vercel Fix**: Remove "frontend" from Root Directory in Vercel project settings
+2. **Railway Deploy**: Deploy Dionysus agent to Railway
+3. **Unsplash Backgrounds**: Add dynamic vineyard backgrounds based on region
+4. **Visual Recommendations**: Show wine cards in CopilotKit chat with add-to-cart
+5. **Cart Integration**: Enable adding AI-recommended wines to Shopify cart
+6. **Image CDN**: Upload 1,661 wine images to Cloudinary or Vercel Blob
