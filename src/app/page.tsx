@@ -1,12 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CopilotSidebar } from '@copilotkit/react-ui';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { motion } from 'framer-motion';
 import { HumeWidget } from '@/components/HumeWidget';
 import { DynamicBackground } from '@/components/DynamicBackground';
 import Link from 'next/link';
+
+// Vic's special bottle - the English wine he always tries to push!
+const VIC_SPECIAL_BOTTLE = {
+  name: "Nyetimber Blanc de Blancs",
+  slug: "nyetimber-blanc-de-blancs",
+  pitch: "I simply must insist you try this Nyetimber Blanc de Blancs! It's my absolute favourite - won gold at the International Wine Challenge and honestly rivals the best Champagne. I've added it to your basket... you can thank me later!"
+};
 
 // Wine type for display
 interface Wine {
@@ -66,6 +73,33 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<Wine[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentRegion, setCurrentRegion] = useState<string | null>(null);
+  const [cartId, setCartId] = useState<string | null>(null);
+  const [cartCount, setCartCount] = useState(0);
+  const [vicPushedBottle, setVicPushedBottle] = useState(false);
+
+  // Check if Vic has already pushed his special bottle this session
+  useEffect(() => {
+    const pushed = sessionStorage.getItem('vic_pushed_bottle');
+    if (pushed) setVicPushedBottle(true);
+  }, []);
+
+  // Get or create cart
+  const getOrCreateCart = useCallback(async () => {
+    let id = cartId || localStorage.getItem('shopify_cart_id');
+    if (!id) {
+      try {
+        const res = await fetch('/api/cart', { method: 'POST' });
+        const data = await res.json();
+        id = data.cartId;
+        if (id) localStorage.setItem('shopify_cart_id', id);
+      } catch (e) {
+        console.error('Failed to create cart:', e);
+        return null;
+      }
+    }
+    if (id) setCartId(id);
+    return id;
+  }, [cartId]);
 
   // Load featured wines on mount
   useEffect(() => {
@@ -162,6 +196,131 @@ export default function Home() {
           classification: wine.classification,
         },
       };
+    },
+  });
+
+  // CopilotKit action: Add wine to cart
+  useCopilotAction({
+    name: 'add_to_cart',
+    description: 'Add a wine to the shopping cart. Use this when the user wants to buy a wine or when Vic wants to sneakily add his favourite English wine.',
+    parameters: [
+      { name: 'wine_slug', type: 'string', description: 'The wine slug to add' },
+      { name: 'quantity', type: 'number', description: 'Quantity to add', required: false },
+    ],
+    handler: async ({ wine_slug, quantity = 1 }) => {
+      try {
+        const cid = await getOrCreateCart();
+        if (!cid) return { success: false, error: 'Could not create cart' };
+
+        // Get wine details first to find Shopify product ID
+        const wineRes = await fetch(`/api/wines?slug=${wine_slug}`);
+        const wine = await wineRes.json();
+
+        if (!wine || wine.error) {
+          return { success: false, error: 'Wine not found' };
+        }
+
+        if (!wine.shopify_product_id) {
+          return { success: false, error: 'Wine not available for purchase yet' };
+        }
+
+        // Add to cart via API
+        const cartRes = await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cartId: cid,
+            productId: wine.shopify_product_id,
+            quantity,
+          }),
+        });
+        const cart = await cartRes.json();
+
+        if (cart.totalQuantity) {
+          setCartCount(cart.totalQuantity);
+        }
+
+        return {
+          success: true,
+          message: `Added ${wine.name} to cart!`,
+          cartTotal: cart.totalQuantity || quantity,
+        };
+      } catch (e) {
+        console.error('Add to cart error:', e);
+        return { success: false, error: 'Failed to add to cart' };
+      }
+    },
+  });
+
+  // CopilotKit action: Vic's special bottle push (only works once per session!)
+  useCopilotAction({
+    name: 'vic_special_bottle',
+    description: `Vic's cheeky move - add his favourite English wine (${VIC_SPECIAL_BOTTLE.name}) to the cart. Only call this ONCE per conversation, and only when the moment feels right (e.g., after discussing wine or when saying goodbye). This is Vic's signature move!`,
+    parameters: [],
+    handler: async () => {
+      // Only do this once per session!
+      if (vicPushedBottle) {
+        return {
+          success: false,
+          message: "I've already added my special recommendation this session... don't want to seem pushy!",
+          alreadyPushed: true,
+        };
+      }
+
+      try {
+        const cid = await getOrCreateCart();
+        if (!cid) return { success: false, error: 'Could not create cart' };
+
+        // Find Vic's special wine
+        const wineRes = await fetch(`/api/wines?q=Nyetimber&country=England&limit=1`);
+        const wines = await wineRes.json();
+
+        if (!wines || wines.length === 0) {
+          return {
+            success: false,
+            message: "Hmm, I can't find my Nyetimber... it must be sold out! Try asking about other English wines.",
+          };
+        }
+
+        const wine = wines[0];
+
+        if (!wine.shopify_product_id) {
+          return {
+            success: false,
+            message: "My favourite Nyetimber isn't available online yet, but do visit our shop to find it!",
+          };
+        }
+
+        // Add to cart
+        const cartRes = await fetch('/api/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cartId: cid,
+            productId: wine.shopify_product_id,
+            quantity: 1,
+          }),
+        });
+        const cart = await cartRes.json();
+
+        if (cart.totalQuantity) {
+          setCartCount(cart.totalQuantity);
+        }
+
+        // Mark as pushed for this session
+        sessionStorage.setItem('vic_pushed_bottle', 'true');
+        setVicPushedBottle(true);
+
+        return {
+          success: true,
+          message: VIC_SPECIAL_BOTTLE.pitch,
+          wine: wine.name,
+          price: wine.price_retail ? `£${wine.price_retail}` : 'Price on request',
+        };
+      } catch (e) {
+        console.error('Vic special bottle error:', e);
+        return { success: false, error: 'Even Vic has technical difficulties sometimes!' };
+      }
     },
   });
 
