@@ -1,4 +1,4 @@
-import { getWineBySlug, formatPrice, getWineInvestmentData, WineInvestmentData } from '@/lib/wine-db'
+import { getWineBySlug, formatPrice, getWineInvestmentData, WineInvestmentData, getSimilarWines, Wine } from '@/lib/wine-db'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -277,6 +277,54 @@ const REGION_INFO: Record<string, RegionData> = {
       { name: 'Liv-ex Pomerol Analysis', url: 'https://www.liv-ex.com' },
     ],
   },
+  'Côte Rôtie': {
+    description: 'Côte Rôtie ("roasted slope") is the northernmost and most prestigious appellation of the Northern Rhône. The steep, south-facing slopes produce powerful yet elegant Syrah, often blended with a touch of Viognier for aromatic complexity.',
+    climate: 'Continental climate with warm summers and cold winters. The steep slopes receive maximum sun exposure, "roasting" the grapes to perfect ripeness.',
+    soils: 'Schist and granite on dramatic terraced slopes, some with gradients exceeding 60 degrees.',
+    grapes: ['Syrah', 'Viognier'],
+    travelGuide: 'The dramatic terraced hillsides of Côte Rôtie offer spectacular views of the Rhône Valley. The village of Ampuis is the heart of the appellation. The area is less touristy than Burgundy or Bordeaux, offering intimate winery visits with passionate vignerons.',
+    whereToStay: [
+      { name: 'Le Beau Rivage', description: 'Elegant hotel on the Rhône river', link: 'https://www.hotel-beaurivage.com' },
+      { name: 'Domaine de Clairefontaine', description: 'Charming château in the countryside', link: 'https://www.domaine-de-clairefontaine.fr' },
+      { name: 'Hotel & Spa La Pyramide', description: 'Luxury hotel in Vienne', link: 'https://www.lapyramide.com' },
+    ],
+    wineTours: [
+      { name: 'Wine Concordia', description: 'Northern Rhône specialists', link: 'https://www.wineconcordia.com' },
+      { name: 'Rhône Wine Tours', description: 'Small group experiences', link: 'https://www.rhonewinetours.com' },
+      { name: 'Inter Rhône', description: 'Official Rhône wine organization', link: 'https://www.vins-rhone.com' },
+    ],
+    bestTimeToVisit: 'April-October, with harvest in September',
+    famousProducers: ['E. Guigal', 'Domaine Jamet', 'René Rostaing', 'Domaine Clusel-Roch', 'Stéphane Ogier'],
+    externalLinks: [
+      { name: 'Rhône Wines Official', url: 'https://www.vins-rhone.com' },
+      { name: 'Wine Spectator Northern Rhône', url: 'https://www.winespectator.com/regions/northern-rhone' },
+      { name: 'Decanter Rhône Guide', url: 'https://www.decanter.com/wine/wine-regions/rhone/' },
+    ],
+  },
+  'Hermitage': {
+    description: 'Hermitage is the most celebrated hill in the Northern Rhône, producing majestic Syrah reds and exceptional Marsanne-Roussanne whites. The famous hill overlooking the town of Tain l\'Hermitage has been prized since Roman times.',
+    climate: 'Continental with Mediterranean influence. The south-facing hill receives intense sun exposure.',
+    soils: 'Granite and decomposed flint on the upper slopes, with loess and alluvial soils below.',
+    grapes: ['Syrah', 'Marsanne', 'Roussanne'],
+    travelGuide: 'The Hermitage hill dominates the landscape, visible from miles around. The town of Tain l\'Hermitage offers excellent restaurants and the famous Valrhona chocolate factory. Many producers welcome visitors by appointment.',
+    whereToStay: [
+      { name: 'Hôtel Le Pavillon de l\'Hermitage', description: 'Boutique hotel at the foot of the hill', link: 'https://www.hotellepavillon.com' },
+      { name: 'Michel Chabran', description: 'Michelin-starred restaurant with rooms', link: 'https://www.michelchabran.fr' },
+      { name: 'Le Beau Rivage', description: 'Riverside hotel near Ampuis', link: 'https://www.hotel-beaurivage.com' },
+    ],
+    wineTours: [
+      { name: 'M. Chapoutier', description: 'Historic producer offering tours', link: 'https://www.chapoutier.com' },
+      { name: 'Cave de Tain', description: 'Cooperative with tasting room', link: 'https://www.cavedetain.com' },
+      { name: 'Paul Jaboulet Aîné', description: 'Famous La Chapelle producer', link: 'https://www.jaboulet.com' },
+    ],
+    bestTimeToVisit: 'April-October',
+    famousProducers: ['Jean-Louis Chave', 'M. Chapoutier', 'Paul Jaboulet Aîné', 'Domaine Marc Sorrel', 'Ferraton Père et Fils'],
+    externalLinks: [
+      { name: 'Rhône Wines Official', url: 'https://www.vins-rhone.com' },
+      { name: 'Wine Spectator Hermitage', url: 'https://www.winespectator.com/regions/hermitage' },
+      { name: 'Decanter Hermitage Guide', url: 'https://www.decanter.com/wine/wine-regions/rhone/' },
+    ],
+  },
 }
 
 // Burgundy sub-regions that should map to Burgundy
@@ -350,6 +398,14 @@ const REGION_IMAGES: Record<string, string[]> = {
   'Pomerol': [
     'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=800',
     'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+  ],
+  'Côte Rôtie': [
+    'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=800',
+    'https://images.unsplash.com/photo-1573062337052-d85b7e430a12?w=800',
+  ],
+  'Hermitage': [
+    'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=800',
+    'https://images.unsplash.com/photo-1573062337052-d85b7e430a12?w=800',
   ],
 }
 
@@ -648,6 +704,64 @@ function RegionSection({ region, country, wineName }: { region: string; country:
   )
 }
 
+function SimilarWinesSection({ wines, currentRegion }: { wines: Wine[]; currentRegion: string | null }) {
+  if (wines.length === 0) return null
+
+  return (
+    <section className="mt-12" aria-labelledby="similar-wines-heading">
+      <h2 id="similar-wines-heading" className="text-2xl font-bold text-white mb-6">
+        Similar Wines You May Enjoy
+      </h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {wines.map((wine) => (
+          <Link
+            key={wine.id}
+            href={`/wines/${wine.slug}`}
+            className="group bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden hover:border-purple-600 transition-colors"
+          >
+            <div className="aspect-[3/4] bg-slate-800 relative">
+              {wine.image_url ? (
+                <img
+                  src={wine.image_url}
+                  alt={`${wine.vintage ? `${wine.vintage} ` : ''}${wine.name} - ${wine.winery}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-4xl">
+                  🍷
+                </div>
+              )}
+            </div>
+            <div className="p-3">
+              <h3 className="font-semibold text-white text-sm line-clamp-2 group-hover:text-purple-400 transition-colors">
+                {wine.vintage && `${wine.vintage} `}{wine.name}
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">{wine.winery}</p>
+              <p className="text-xs text-purple-400 mt-1">{wine.region}</p>
+              {wine.price_retail && (
+                <p className="text-sm font-bold text-white mt-2">
+                  {formatPrice(wine.price_retail)}
+                </p>
+              )}
+            </div>
+          </Link>
+        ))}
+      </div>
+      {currentRegion && (
+        <div className="mt-6 text-center">
+          <Link
+            href={`/wines?region=${encodeURIComponent(currentRegion)}`}
+            className="text-purple-400 hover:text-purple-300 text-sm"
+          >
+            View all wines from {currentRegion} →
+          </Link>
+        </div>
+      )}
+    </section>
+  )
+}
+
 export default async function WineDetailPage({ params }: Props) {
   const { slug } = await params
   const wine = await getWineBySlug(slug)
@@ -656,7 +770,10 @@ export default async function WineDetailPage({ params }: Props) {
     notFound()
   }
 
-  const investmentData = await getWineInvestmentData(wine.id)
+  const [investmentData, similarWines] = await Promise.all([
+    getWineInvestmentData(wine.id),
+    getSimilarWines(wine.id, wine.region, wine.winery, 4)
+  ])
   const fullWineName = `${wine.vintage ? `${wine.vintage} ` : ''}${wine.name}`
 
   return (
@@ -830,19 +947,8 @@ export default async function WineDetailPage({ params }: Props) {
             <RegionSection region={wine.region} country={wine.country} wineName={fullWineName} />
           )}
 
-          {/* Related Wines CTA */}
-          <section className="mt-12 bg-purple-900/20 border border-purple-800/50 rounded-xl p-6 text-center">
-            <h2 className="text-xl font-bold text-white mb-2">Explore More {wine.region} Wines</h2>
-            <p className="text-slate-400 mb-4">
-              Discover other exceptional wines from the {wine.region} region like {wine.name}.
-            </p>
-            <Link
-              href={`/wines?region=${encodeURIComponent(wine.region || '')}`}
-              className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-500 transition-colors"
-            >
-              Browse {wine.region} Collection
-            </Link>
-          </section>
+          {/* Similar Wines */}
+          <SimilarWinesSection wines={similarWines} currentRegion={wine.region} />
         </article>
       </div>
     </div>

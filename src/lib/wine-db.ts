@@ -294,3 +294,54 @@ export async function getWineInvestmentData(wineId: number): Promise<WineInvestm
   `
   return data.length > 0 ? (data[0] as WineInvestmentData) : null
 }
+
+/**
+ * Get similar wines by region or producer
+ */
+export async function getSimilarWines(
+  wineId: number,
+  region: string | null,
+  winery: string | null,
+  limit: number = 4
+): Promise<Wine[]> {
+  // Try to find wines from same region first, excluding current wine
+  if (region) {
+    const wines = await sql`
+      SELECT id, name, slug, winery, region, country, grape_variety,
+             vintage, wine_type, price_retail, image_url
+      FROM wines
+      WHERE region ILIKE ${region} AND id != ${wineId} AND is_active = true
+      ORDER BY RANDOM()
+      LIMIT ${limit}
+    `
+    if (wines.length >= limit) {
+      return wines as Wine[]
+    }
+  }
+
+  // Fallback to same producer
+  if (winery) {
+    const wines = await sql`
+      SELECT id, name, slug, winery, region, country, grape_variety,
+             vintage, wine_type, price_retail, image_url
+      FROM wines
+      WHERE winery ILIKE ${winery} AND id != ${wineId} AND is_active = true
+      ORDER BY RANDOM()
+      LIMIT ${limit}
+    `
+    if (wines.length > 0) {
+      return wines as Wine[]
+    }
+  }
+
+  // Fallback to random wines
+  const wines = await sql`
+    SELECT id, name, slug, winery, region, country, grape_variety,
+           vintage, wine_type, price_retail, image_url
+    FROM wines
+    WHERE id != ${wineId} AND is_active = true
+    ORDER BY RANDOM()
+    LIMIT ${limit}
+  `
+  return wines as Wine[]
+}
