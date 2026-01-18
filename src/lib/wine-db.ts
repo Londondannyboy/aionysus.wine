@@ -260,3 +260,37 @@ export function formatPrice(price: number | null): string {
     currency: 'GBP'
   }).format(price)
 }
+
+/**
+ * Wine Investment Data
+ */
+export interface WineInvestmentData {
+  wine_id: number
+  price_2020: number | null
+  price_2021: number | null
+  price_2022: number | null
+  price_2023: number | null
+  price_2024: number | null
+  price_2025: number | null
+  annual_return_pct: number | null
+  volatility_score: number | null
+  investment_rating: string | null
+  liquidity_score: number | null
+  projected_5yr_return: number | null
+  analyst_recommendation: string | null
+}
+
+/**
+ * Get investment data for a wine
+ */
+export async function getWineInvestmentData(wineId: number): Promise<WineInvestmentData | null> {
+  const data = await sql`
+    SELECT wine_id, price_2020, price_2021, price_2022, price_2023, price_2024, price_2025,
+           annual_return_pct, volatility_score, investment_rating, liquidity_score,
+           projected_5yr_return, analyst_recommendation
+    FROM wine_investment_data
+    WHERE wine_id = ${wineId}
+    LIMIT 1
+  `
+  return data.length > 0 ? (data[0] as WineInvestmentData) : null
+}
