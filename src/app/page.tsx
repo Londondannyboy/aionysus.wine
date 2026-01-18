@@ -5,6 +5,7 @@ import { CopilotSidebar } from '@copilotkit/react-ui';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { motion } from 'framer-motion';
 import { HumeWidget } from '@/components/HumeWidget';
+import { DynamicBackground } from '@/components/DynamicBackground';
 import Link from 'next/link';
 
 // Wine type for display
@@ -64,6 +65,7 @@ export default function Home() {
   const [featuredWines, setFeaturedWines] = useState<Wine[]>([]);
   const [searchResults, setSearchResults] = useState<Wine[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentRegion, setCurrentRegion] = useState<string | null>(null);
 
   // Load featured wines on mount
   useEffect(() => {
@@ -110,6 +112,13 @@ export default function Home() {
       const res = await fetch(`/api/wines?${params}`);
       const data = await res.json();
       setSearchResults(Array.isArray(data) ? data : []);
+
+      // Update background based on region search
+      if (region) {
+        setCurrentRegion(region);
+      } else if (data.length > 0 && data[0].region) {
+        setCurrentRegion(data[0].region);
+      }
 
       return {
         success: true,
@@ -159,7 +168,7 @@ export default function Home() {
   const displayWines = searchResults.length > 0 ? searchResults : featuredWines;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/30 to-slate-950">
+    <DynamicBackground region={currentRegion}>
       <CopilotSidebar
         defaultOpen={false}
         labels={{
@@ -258,6 +267,6 @@ export default function Home() {
           </div>
         </main>
       </CopilotSidebar>
-    </div>
+    </DynamicBackground>
   );
 }
