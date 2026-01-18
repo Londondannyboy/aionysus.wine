@@ -9,13 +9,13 @@ import { NextRequest } from "next/server";
 // Use empty adapter since we're routing to external Pydantic AI agent
 const serviceAdapter = new ExperimentalEmptyAdapter();
 
-// Railway agent URL - Penelope Pension Advisor agent
-const AGENT_URL = process.env.NEXT_PUBLIC_AGENT_URL || "https://penelope-agent-production.up.railway.app";
+// Railway agent URL - Dionysus Wine Sommelier agent
+const AGENT_URL = process.env.NEXT_PUBLIC_AGENT_URL || "https://dionysus-agent-production.up.railway.app";
 
 // Create CopilotRuntime with HttpAgent pointing to Railway Pydantic AI
 const runtime = new CopilotRuntime({
   agents: {
-    penelope: new HttpAgent({ url: `${AGENT_URL}/` }),
+    dionysus: new HttpAgent({ url: `${AGENT_URL}/` }),
   },
 });
 
