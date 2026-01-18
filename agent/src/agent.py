@@ -528,6 +528,92 @@ async def list_regions_tool(ctx: RunContext[DionysusDeps]) -> str:
         return "I couldn't retrieve the regions list. Try asking about Burgundy, Bordeaux, Champagne, or Rhône!"
 
 
+@vic_agent.tool
+async def add_to_cart_tool(ctx: RunContext[DionysusDeps], wine_slug: str) -> str:
+    """
+    Add a wine to the user's shopping cart. Call this when the user wants to buy a wine.
+    The frontend will handle the actual cart operation.
+
+    Args:
+        wine_slug: The slug of the wine to add (e.g., 'nyetimber-blanc-de-blancs')
+    """
+    session_ctx = get_session_context(ctx.deps.session_id)
+
+    # Get wine details to confirm it exists
+    wine = await get_wine_by_slug(wine_slug)
+
+    if wine:
+        session_ctx.current_wine = wine['name']
+        wine_name = f"{wine.get('vintage', '')} {wine['name']}".strip()
+        price = f"£{wine['price_retail']}" if wine.get('price_retail') else "Price on request"
+
+        # Return action instruction for frontend
+        return f"""ACTION:ADD_TO_CART
+WINE_SLUG:{wine_slug}
+WINE_NAME:{wine_name}
+PRICE:{price}
+
+I've added **{wine_name}** to your cart! {price}. Would you like to continue browsing or head to checkout?"""
+    else:
+        return f"I couldn't find that wine to add to cart. Would you like me to search for similar wines?"
+
+
+@vic_agent.tool
+async def recommend_for_investment_tool(
+    ctx: RunContext[DionysusDeps],
+    region: Optional[str] = None,
+    max_price: Optional[float] = None,
+    min_price: Optional[float] = None,
+) -> str:
+    """
+    Recommend wines for investment. Call when user asks about wine investment.
+
+    Args:
+        region: Optional region filter (e.g., 'Bordeaux', 'Burgundy', 'Champagne', 'England')
+        max_price: Optional maximum price
+        min_price: Optional minimum price (default 100 for investment-grade)
+    """
+    session_ctx = get_session_context(ctx.deps.session_id)
+
+    # Investment wines are typically £100+
+    actual_min = min_price or 100
+
+    wines = await search_wines(
+        region=region,
+        min_price=actual_min,
+        max_price=max_price,
+        limit=6
+    )
+
+    if wines:
+        if region:
+            session_ctx.preferred_region = region
+
+        results = [f"**Investment-Grade {region or 'Fine'} Wines:**"]
+        results.append("")
+
+        for wine in wines:
+            price = f"£{wine['price_retail']}" if wine.get('price_retail') else "POA"
+            vintage = wine.get('vintage', '')
+            classification = wine.get('classification', '')
+
+            line = f"- **{vintage} {wine['name']}** ({wine.get('winery', '')}) - {price}"
+            if classification:
+                line += f" [{classification}]"
+            results.append(line)
+
+        results.append("")
+        results.append("These wines have strong investment potential. Would you like me to add any to your cart?")
+
+        if not region or region.lower() != 'england':
+            results.append("")
+            results.append("*Psst... English sparkling wine is the smartest investment play right now. Just saying!*")
+
+        return "\n".join(results)
+    else:
+        return f"I couldn't find investment-grade wines matching those criteria. Try adjusting the price range or region?"
+
+
 # =============================================================================
 # FASTAPI APPLICATION
 # =============================================================================
