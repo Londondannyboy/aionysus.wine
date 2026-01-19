@@ -27,7 +27,19 @@ function VoiceWidget({
   userId?: string
   isAuthenticated: boolean
 }) {
-  const { connect, disconnect, status, messages } = useVoice()
+  const {
+    connect,
+    disconnect,
+    status,
+    messages,
+    isAudioMuted,
+    isPlaying,
+    error,
+    isAudioError,
+    unmuteAudio,
+    volume,
+    setVolume
+  } = useVoice()
   const [isPending, setIsPending] = useState(false)
   const [logs, setLogs] = useState<string[]>([])
 
@@ -89,13 +101,18 @@ ${firstName ? `Greet them warmly: "Hey ${firstName}! Great to chat with you abou
         sessionSettings: sessionSettings as any
       })
       log('Connected!')
+
+      // Ensure audio is unmuted and volume is up
+      unmuteAudio()
+      setVolume(1.0)
+      log(`Audio setup: muted=${isAudioMuted}, volume=${volume}`)
     } catch (e: any) {
       log(`Error: ${e?.message || e}`)
       console.error('[Hume] Connect error:', e)
     }
 
     setIsPending(false)
-  }, [connect, accessToken, userName, userId, isAuthenticated])
+  }, [connect, accessToken, userName, userId, isAuthenticated, unmuteAudio, setVolume, isAudioMuted, volume])
 
   const handleDisconnect = useCallback(() => {
     disconnect()
@@ -161,8 +178,12 @@ ${firstName ? `Greet them warmly: "Hey ${firstName}! Great to chat with you abou
       {/* Debug Logs (Collapsible) */}
       <details className="w-full max-w-xs text-xs text-stone-500">
         <summary className="cursor-pointer hover:text-stone-400 mb-2 text-center">Debug Info</summary>
-        <div className="bg-black/40 p-2 rounded font-mono max-h-32 overflow-auto">
+        <div className="bg-black/40 p-2 rounded font-mono max-h-40 overflow-auto">
            <div className="text-yellow-500 mb-1">User: {userName || 'Guest'} ({isAuthenticated ? 'Auth' : 'Anon'})</div>
+           <div className={`mb-1 ${isAudioError ? 'text-red-400' : 'text-green-400'}`}>
+             Audio: {isAudioMuted ? 'MUTED' : 'unmuted'} | Vol: {volume} | Playing: {isPlaying ? 'yes' : 'no'} | Err: {isAudioError ? 'YES' : 'no'}
+           </div>
+           {error && <div className="text-red-400 mb-1">Error: {error.message}</div>}
            {logs.map((l, i) => <div key={i} className="truncate">{l}</div>)}
         </div>
       </details>
