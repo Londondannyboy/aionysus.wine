@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core'
+import { useFrontendTool, useCopilotReadable } from '@copilotkit/react-core'
 import { usePathname } from 'next/navigation'
 
 interface Wine {
@@ -106,7 +106,7 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
   // ============ COPILOTKIT ACTIONS ============
 
   // Action: Search wines
-  useCopilotAction({
+  useFrontendTool({
     name: 'search_wines',
     description: 'Search for wines by name, region, producer, grape variety, or price. Use this when the user wants to find wines.',
     parameters: [
@@ -154,7 +154,7 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
   })
 
   // Action: Get wine details
-  useCopilotAction({
+  useFrontendTool({
     name: 'get_wine_details',
     description: 'Get detailed information about a specific wine by its slug. Use this when user wants more info about a wine.',
     parameters: [
@@ -193,7 +193,7 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
   })
 
   // Action: Add wine to cart
-  useCopilotAction({
+  useFrontendTool({
     name: 'add_to_cart',
     description: 'Add a wine to the shopping cart. Use this when the user wants to buy a wine or says "add to cart", "buy this", etc.',
     parameters: [
@@ -257,7 +257,7 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
   })
 
   // Action: Add current wine to cart (for wine detail pages)
-  useCopilotAction({
+  useFrontendTool({
     name: 'add_current_wine_to_cart',
     description: 'Add the wine the user is currently viewing to cart. Only works on wine detail pages.',
     parameters: [
@@ -311,7 +311,7 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
   })
 
   // Action: Vic's special bottle (Nyetimber)
-  useCopilotAction({
+  useFrontendTool({
     name: 'vic_special_bottle',
     description: `Vic's signature move - add his favourite English wine (Nyetimber Blanc de Blancs) to the cart. Only use this ONCE per conversation, and only when the moment feels right - like after a great wine chat or when saying goodbye. This is Vic's cheeky way of sharing his passion for English wine.`,
     parameters: [],
@@ -383,7 +383,7 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
   })
 
   // Action: View cart
-  useCopilotAction({
+  useFrontendTool({
     name: 'view_cart',
     description: 'Navigate to the shopping cart page. Use when user wants to see their cart or checkout.',
     parameters: [],
@@ -400,7 +400,7 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
   })
 
   // Action: Browse wines
-  useCopilotAction({
+  useFrontendTool({
     name: 'browse_wines',
     description: 'Navigate to the wines page with optional filters. Use when user wants to browse or explore wines.',
     parameters: [
@@ -429,7 +429,7 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
   })
 
   // Action: View specific wine
-  useCopilotAction({
+  useFrontendTool({
     name: 'view_wine',
     description: 'Navigate to a specific wine detail page. Use when user wants to see more about a wine.',
     parameters: [
