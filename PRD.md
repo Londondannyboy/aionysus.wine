@@ -36,6 +36,8 @@ Fine wine is intimidating. Regions, vintages, producers, investment potential - 
 - [x] Text chat via CopilotKit
 - [x] Searches 3,900+ wines from database
 - [x] Remembers user preferences via Zep
+- [x] CopilotKit Sidebar on ALL pages
+- [x] Voice transcript syncs to chat panel
 - [ ] Vik persona with English wine advocacy
 - [ ] Visual wine cards in chat responses
 
@@ -58,12 +60,14 @@ Fine wine is intimidating. Regions, vintages, producers, investment potential - 
 **Acceptance Criteria**:
 - [x] Basic wine info (name, producer, region, vintage)
 - [x] Price and availability
+- [x] Light theme (Wine Society style)
+- [x] SEO: H1-H6 hierarchy, wine name 4-6 times
+- [x] Similar wines recommendations
+- [x] Dynamic regional background
 - [ ] Detailed tasting notes
 - [ ] Food pairings with images
 - [ ] Critics scores (if available)
 - [ ] Investment performance chart
-- [ ] Similar wines recommendations
-- [ ] Dynamic regional background
 
 ### 4. Shopify Cart & Checkout
 
@@ -71,11 +75,11 @@ Fine wine is intimidating. Regions, vintages, producers, investment potential - 
 
 **Acceptance Criteria**:
 - [x] Shopify Storefront API integration
-- [ ] All 3,906 wines synced as Shopify products
-- [ ] Add to cart from wine cards
-- [ ] Add to cart from AI recommendations
-- [ ] Cart page with totals
-- [ ] Redirect to Shopify checkout
+- [x] Add to cart from AI recommendations (via useFrontendTool)
+- [x] Cart page with totals
+- [x] Redirect to Shopify checkout
+- [ ] All 3,906 wines synced as Shopify products (97% done)
+- [ ] Add to cart from wine cards UI
 
 ### 5. Dynamic Visual Experience
 
@@ -252,6 +256,12 @@ Aionysus Wine provides wine information and facilitates purchases. Wine values c
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2026-01-22 | Light theme for wine detail pages | Claude |
+| 2026-01-22 | SEO: H1-H6 hierarchy, wine name 4-6 times | Claude |
+| 2026-01-22 | CopilotKit Sidebar on ALL pages | Claude |
+| 2026-01-22 | Migrated to useFrontendTool (deprecated useCopilotAction) | Claude |
+| 2026-01-22 | Voice transcript sync to CopilotKit chat | Claude |
+| 2026-01-22 | Cart/investment tools in Pydantic AI agent | Claude |
 | 2026-01-18 | Scraped 3,906 wines from Goedhuis Waddesdon | Claude |
 | 2026-01-18 | Voice integration with Hume EVI complete | Claude |
 | 2026-01-18 | Dynamic Unsplash backgrounds implemented | Claude |

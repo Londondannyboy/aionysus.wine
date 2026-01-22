@@ -15,7 +15,7 @@ uvicorn src.agent:app --reload --port 8000
 
 ## Current Architecture
 
-Wine e-commerce and investment platform with AI sommelier (Vik). CopilotKit chat + Hume EVI voice. 3,906 wines from Goedhuis Waddesdon in Neon PostgreSQL. Shopify Storefront API for cart/checkout. Dynamic Unsplash backgrounds by region.
+Wine e-commerce and investment platform with AI sommelier (Vic). CopilotKit chat + Hume EVI voice. 3,906 wines from Goedhuis Waddesdon in Neon PostgreSQL. Shopify Storefront API for cart/checkout. Dynamic Unsplash backgrounds by region.
 
 **Pattern**: Next.js frontend + CopilotKit runtime + Pydantic AI agent on Railway for voice CLM.
 
@@ -29,21 +29,66 @@ Wine e-commerce and investment platform with AI sommelier (Vik). CopilotKit chat
 | Wine listing | `src/app/wines/page.tsx` |
 | Wine detail | `src/app/wines/[slug]/page.tsx` |
 | Cart page | `src/app/cart/page.tsx` |
-| CopilotKit provider | `src/components/providers.tsx` |
+| **CopilotKit** | |
+| Provider + Global Actions | `src/components/providers.tsx` |
+| Global Frontend Tools | `src/components/GlobalCopilotActions.tsx` |
+| Global Vic Sidebar | `src/components/GlobalVicSidebar.tsx` |
+| Voice Transcript Sync | `src/components/VoiceTranscriptSync.tsx` |
 | CopilotKit runtime | `src/app/api/copilotkit/route.ts` |
+| **Voice** | |
+| Hume voice widget | `src/components/HumeWidget.tsx` |
+| Hume token API | `src/app/api/hume-token/route.ts` |
+| **Data & Auth** | |
 | Wines API | `src/app/api/wines/route.ts` |
 | Database queries | `src/lib/wine-db.ts` |
 | Shopify client | `src/lib/shopify.ts` |
 | Unsplash lib | `src/lib/unsplash.ts` |
-| Dynamic backgrounds | `src/components/DynamicBackground.tsx` |
-| Hume voice widget | `src/components/HumeWidget.tsx` |
-| Hume token API | `src/app/api/hume-token/route.ts` |
 | Neon Auth client | `src/lib/auth/client.ts` |
 | Neon Auth server | `src/lib/auth/server.ts` |
+| **Components** | |
+| Dynamic backgrounds | `src/components/DynamicBackground.tsx` |
+| Wine image (client) | `src/components/WineImage.tsx` |
 | **Agent (Railway)** | |
 | Agent entry point | `agent/src/agent.py` |
 | Database queries | `agent/src/database.py` |
 | Railway config | `agent/railway.toml` |
+
+---
+
+## CopilotKit Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    COPILOTKIT SETUP                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   layout.tsx                                                │
+│   └── <Providers>                                           │
+│       └── <CopilotKit runtimeUrl agent="vic">               │
+│           └── <GlobalCopilotActions />  ← Frontend tools    │
+│               └── <GlobalVicSidebar>    ← CopilotSidebar    │
+│                   └── {children}                            │
+│                                                              │
+│   GlobalCopilotActions.tsx (uses useFrontendTool):          │
+│   ├── search_wines          - Search wine database          │
+│   ├── get_wine_details      - Get single wine info          │
+│   ├── add_to_cart           - Add wine by slug              │
+│   ├── add_current_wine_to_cart - Add viewed wine            │
+│   ├── vic_special_bottle    - Vic's Nyetimber signature     │
+│   ├── view_cart             - Navigate to cart              │
+│   ├── browse_wines          - Navigate to wines list        │
+│   └── view_wine             - Navigate to wine detail       │
+│                                                              │
+│   Context (useCopilotReadable):                             │
+│   ├── Current page path                                     │
+│   ├── Current wine (if on detail page)                      │
+│   ├── Search results                                        │
+│   └── Cart state                                            │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Important**: Using `useFrontendTool` (not deprecated `useCopilotAction`) per CopilotKit best practices.
 
 ---
 
@@ -141,36 +186,42 @@ CREATE TABLE wine_price_variants (
 
 ---
 
-## Phase 2 Tasks (Current Priority)
+## Current Status (Jan 22, 2026)
 
-### 1. Vik Persona
-- Update agent system prompt to Vik character
-- English wine advocate, cheeky personality
-- Campaign: "Vik's English Wine Month"
-- Add Vik avatar to homepage
+### Completed
+- [x] Light theme for wine detail pages (Wine Society style)
+- [x] SEO: H1-H6 hierarchy, wine name 4-6 times, bolded once
+- [x] CopilotKit Sidebar on ALL pages (GlobalVicSidebar)
+- [x] Site-wide frontend tools (GlobalCopilotActions)
+- [x] Migrated to `useFrontendTool` per CopilotKit best practices
+- [x] Voice transcript sync to CopilotKit chat
+- [x] Cart and investment tools in Pydantic AI agent
+- [x] WineImage client component for error handling
 
-### 2. Shopify Product Sync
-- Script to add all 3,906 wines via Admin API
-- Map wine data to Shopify products
-- Update shopify_product_id in database
-- Enable full cart/checkout flow
+### In Progress
+- [ ] Hume voice audio output not playing (connection works, debugging audio state)
+- [ ] Shopify product sync (97% complete)
 
-### 3. Wine Investment Data
-- Create wine_investment_data table
-- Seed with simulated historical prices
-- Calculate annual returns, ratings
-- Display on wine detail pages
+### Pending
+- [ ] Vic persona full implementation
+- [ ] Wine investment seed data
+- [ ] English Wine Month campaign
 
-### 4. Enhanced Wine Pages
-- Web scraping for detailed tasting notes
-- Options: Crawl4AI, Serper.dev, LLM generation
-- Add food pairings, critics scores
-- Investment performance charts
+---
 
-### 5. English Wine Collection
-- Feature English producers (Nyetimber, Chapel Down, etc.)
-- Investment thesis for English sparkling
-- Dedicated collection page
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind |
+| AI Chat | CopilotKit (`useFrontendTool`, `useCopilotReadable`) |
+| Voice | Hume EVI (@humeai/voice-react v0.2.11) |
+| Agent | Pydantic AI (FastAPI on Railway) |
+| Database | Neon PostgreSQL (@neondatabase/serverless) |
+| Auth | Neon Auth (@neondatabase/auth) |
+| E-commerce | Shopify Storefront + Admin API |
+| Memory | Zep Cloud |
+| Backgrounds | Unsplash API |
 
 ---
 
@@ -185,41 +236,12 @@ CREATE TABLE wine_price_variants (
 
 ---
 
-## Tech Stack
+## Vic Persona (AI Sommelier)
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 15, React 19, TypeScript, Tailwind |
-| AI Chat | CopilotKit (Next.js runtime + AG-UI protocol) |
-| Voice | Hume EVI (@humeai/voice-react) |
-| Agent | Pydantic AI (FastAPI on Railway) |
-| Database | Neon PostgreSQL (@neondatabase/serverless) |
-| Auth | Neon Auth (@neondatabase/auth) |
-| E-commerce | Shopify Storefront + Admin API |
-| Memory | Zep Cloud |
-| Backgrounds | Unsplash API |
-
----
-
-## Wine Regions
-
-| Region | Country | Key Grapes |
-|--------|---------|------------|
-| Burgundy | France | Pinot Noir, Chardonnay |
-| Bordeaux | France | Cabernet Sauvignon, Merlot |
-| Champagne | France | Chardonnay, Pinot Noir |
-| Rhône | France | Syrah, Grenache |
-| **Sussex** | **England** | Chardonnay, Pinot Noir (sparkling) |
-| **Kent** | **England** | Bacchus, Chardonnay |
-
----
-
-## Vik Persona (AI Sommelier)
-
-**Name**: Vik
+**Name**: Vic
 **Background**: Former wine magazine journalist
 **Secret Passion**: English wines (especially Sussex sparkling)
-**Campaign**: "Vik's English Wine Month"
+**Campaign**: "Vic's English Wine Month"
 
 **Personality**:
 - Warm, knowledgeable, approachable
@@ -244,11 +266,20 @@ Try these in the chat/voice:
 - "Find wines under £50"
 - "What wine goes with steak?"
 - "Tell me about English wine"
-- "Which wines are good investments?"
+- "Add this wine to my cart"
 
 ---
 
 ## Session Log
+
+### Jan 22, 2026
+- Light theme for wine detail pages (Wine Society reference)
+- SEO improvements (wine name 4-6 times, H1-H6 hierarchy)
+- CopilotKit on ALL pages via GlobalVicSidebar
+- Migrated to useFrontendTool (deprecated useCopilotAction)
+- Voice transcript sync to CopilotKit chat panel
+- Added cart/investment tools to Railway agent
+- Debugging Hume audio output (connects but no sound)
 
 ### Jan 18, 2026
 - Full conversion from pension.quest to aionysus.wine
@@ -256,15 +287,14 @@ Try these in the chat/voice:
 - Downloaded 1,661 wine images
 - Voice integration complete (Hume EVI + Railway CLM)
 - Dynamic Unsplash backgrounds implemented
-- Created Phase 2 restart prompt
-- Updated PRD and CLAUDE.md
 
-### Phase 2 Pending
-- Vik persona implementation
-- Shopify product sync (3,906 wines)
-- Wine investment seed data
-- Enhanced wine detail pages
-- English Wine Month campaign
+---
+
+## Known Issues
+
+1. **Hume Audio Output**: Connection works, but voice audio not playing. Debug info shows audio state. May be browser autoplay restrictions or AudioContext initialization.
+
+2. **Some Wine Images 404**: Not all wines have images. WineImage component handles fallback to emoji.
 
 ---
 
@@ -275,6 +305,7 @@ Try these in the chat/voice:
 - **Vercel Project**: aionysus.wine
 - **Don't add trailing newlines** to env vars (caused auth failures)
 - **Use printf '%s'** when adding Vercel env vars via CLI
+- **Use useFrontendTool** not useCopilotAction (deprecated)
 
 ---
 
