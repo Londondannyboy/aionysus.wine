@@ -49,6 +49,18 @@ function VoiceWidget({
     setLogs(prev => [...prev.slice(-9), `${time} ${msg}`])
   }
 
+  // Monitor connection status and ensure audio is ready
+  useEffect(() => {
+    if (status.value === 'connected') {
+      log(`Status: connected, audio muted=${isAudioMuted}, playing=${isPlaying}`)
+      // Ensure audio is unmuted when connected
+      if (isAudioMuted) {
+        unmuteAudio()
+        log('Auto-unmuted audio on connection')
+      }
+    }
+  }, [status.value, isAudioMuted, isPlaying, unmuteAudio])
+
   const handleConnect = useCallback(async () => {
     setIsPending(true)
 
@@ -102,10 +114,12 @@ ${firstName ? `Greet them warmly: "Hey ${firstName}! Great to chat with you abou
       })
       log('Connected!')
 
-      // Ensure audio is unmuted and volume is up
-      unmuteAudio()
-      setVolume(1.0)
-      log(`Audio setup: muted=${isAudioMuted}, volume=${volume}`)
+      // Give audio context time to initialize, then unmute
+      setTimeout(() => {
+        unmuteAudio()
+        setVolume(1.0)
+        log(`Audio setup complete: will unmute and set volume to 1.0`)
+      }, 500)
     } catch (e: any) {
       log(`Error: ${e?.message || e}`)
       console.error('[Hume] Connect error:', e)
@@ -175,13 +189,28 @@ ${firstName ? `Greet them warmly: "Hey ${firstName}! Great to chat with you abou
         </div>
       )}
 
+      {/* Manual Audio Enable Button - Fallback for browser restrictions */}
+      {isConnected && isAudioMuted && (
+        <button
+          onClick={() => {
+            unmuteAudio()
+            setVolume(1.0)
+            log('Manual audio enable clicked')
+          }}
+          className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-xs font-medium"
+        >
+          Enable Audio
+        </button>
+      )}
+
       {/* Debug Logs (Collapsible) */}
       <details className="w-full max-w-xs text-xs text-stone-500">
         <summary className="cursor-pointer hover:text-stone-400 mb-2 text-center">Debug Info</summary>
         <div className="bg-black/40 p-2 rounded font-mono max-h-40 overflow-auto">
            <div className="text-yellow-500 mb-1">User: {userName || 'Guest'} ({isAuthenticated ? 'Auth' : 'Anon'})</div>
+           <div className="text-blue-400 mb-1">Status: {status.value}</div>
            <div className={`mb-1 ${isAudioError ? 'text-red-400' : 'text-green-400'}`}>
-             Audio: {isAudioMuted ? 'MUTED' : 'unmuted'} | Vol: {volume} | Playing: {isPlaying ? 'yes' : 'no'} | Err: {isAudioError ? 'YES' : 'no'}
+             Audio: {isAudioMuted ? 'MUTED' : 'unmuted'} | Vol: {(volume * 100).toFixed(0)}% | Playing: {isPlaying ? 'YES' : 'no'} | Err: {isAudioError ? 'YES' : 'no'}
            </div>
            {error && <div className="text-red-400 mb-1">Error: {error.message}</div>}
            {logs.map((l, i) => <div key={i} className="truncate">{l}</div>)}
@@ -249,7 +278,12 @@ export function HumeWidget() {
   }
 
   return (
-    <VoiceProvider>
+    <VoiceProvider
+      enableAudioWorklet={false}
+      onAudioStart={() => console.log('[Hume] Audio playback STARTED')}
+      onAudioEnd={() => console.log('[Hume] Audio playback ENDED')}
+      onMessage={(msg) => console.log('[Hume] Message received:', msg.type)}
+    >
       <VoiceWidget accessToken={accessToken} userName={userName} userId={userId} isAuthenticated={isAuthenticated} />
     </VoiceProvider>
   )
