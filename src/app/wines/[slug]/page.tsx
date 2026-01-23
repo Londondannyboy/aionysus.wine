@@ -27,6 +27,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
+    alternates: {
+      canonical: `https://aionysus.wine/wines/${slug}`,
+    },
     openGraph: {
       title,
       description,
@@ -826,6 +829,32 @@ export default async function WineDetailPage({ params }: Props) {
                 </h2>
                 <p className="text-stone-700 leading-relaxed">{enrichment.collectorsNotes}</p>
               </section>
+
+              {/* External Authority Links */}
+              {enrichment.externalLinks.length > 0 && (
+                <section className="mt-10" aria-labelledby="resources-heading">
+                  <h2 id="resources-heading" className="text-2xl font-bold text-stone-900 mb-4">
+                    Further Reading &amp; Resources
+                  </h2>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {enrichment.externalLinks.map((link) => (
+                      <a
+                        key={link.url}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-start gap-3 p-4 bg-white border border-stone-200 rounded-lg hover:border-burgundy-400 transition-colors"
+                      >
+                        <div>
+                          <span className="font-medium text-stone-900 hover:text-burgundy-700">{link.name}</span>
+                          <p className="text-sm text-stone-500 mt-0.5">{link.description}</p>
+                        </div>
+                        <span className="text-stone-400 flex-shrink-0 mt-0.5">&rarr;</span>
+                      </a>
+                    ))}
+                  </div>
+                </section>
+              )}
             </>
           )}
 

@@ -122,6 +122,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: appellation.title,
     description: appellation.metaDescription,
+    alternates: {
+      canonical: `https://aionysus.wine/regions/${slug}`,
+    },
     openGraph: {
       title: appellation.title,
       description: appellation.metaDescription,

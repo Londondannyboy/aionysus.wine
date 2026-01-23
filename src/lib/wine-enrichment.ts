@@ -32,6 +32,7 @@ export interface WineEnrichment {
   }
   additionalFoodPairings: string[]
   collectorsNotes: string
+  externalLinks: { name: string; url: string; description: string }[]
 }
 
 export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
@@ -73,6 +74,12 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
     },
     additionalFoodPairings: ['Crème caramel', 'Pecan pie', 'Aged Mimolette cheese', 'Cigar accompaniment', 'Roasted chestnuts', 'Dark chocolate truffles with sea salt', 'Blue Stilton', 'Foie gras terrine'],
     collectorsNotes: 'The 1875 Boal H.M. Borges is an extraordinary collector\'s wine. Pre-phylloxera Madeira from the 1800s represents one of the most secure wine investments, as the wine is essentially indestructible and the supply can only diminish over time. Provenance is key — ensure bottles come directly from the Borges lodge in Funchal or from reputable auction houses. Authentication can be verified through H.M. Borges directly. This wine makes an exceptional birth-year gift, anniversary celebration, or legacy cellar centrepiece.',
+    externalLinks: [
+      { name: 'H.M. Borges Official', url: 'https://www.hmborges.com', description: 'Official producer website with history and collection' },
+      { name: 'Madeira Wine Institute (IVBAM)', url: 'https://www.ivbam.gov-madeira.pt', description: 'Official Madeira DOC regulatory body' },
+      { name: 'Visit Madeira', url: 'https://www.visitmadeira.pt', description: 'Tourism and wine route information' },
+      { name: 'Wine-Searcher: Boal Madeira', url: 'https://www.wine-searcher.com/grape-1628-boal', description: 'Market prices and availability worldwide' },
+    ],
   },
 
   '2011-ch-petrus-pomerol': {
@@ -113,6 +120,12 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
     },
     additionalFoodPairings: ['Wagyu beef', 'Black truffle risotto', 'Aged Parmigiano-Reggiano (36+ months)', 'Roast pigeon with foie gras', 'Venison loin with blackberry jus', 'Beef cheek bourguignon', 'Slow-roasted lamb shoulder'],
     collectorsNotes: 'The 2011 Château Pétrus represents exceptional value within the Pétrus portfolio. While the blockbuster 2009 and 2010 command extraordinary premiums, the 2011 offers genuine Pétrus quality and terroir expression at a significant discount. For collectors, this vintage offers an accessible entry point to one of the world\'s most legendary wines. Ensure all purchases are from reputable sources with complete provenance documentation. Château Pétrus wines are among the most counterfeited in the world — authentication services are recommended for secondary market purchases.',
+    externalLinks: [
+      { name: 'Établissements Jean-Pierre Moueix', url: 'https://www.moueix.com', description: 'Official Pétrus owner and négociant' },
+      { name: 'Bordeaux Wine Council', url: 'https://www.bordeaux.com/en/Our-Terroir/Appellations/Pomerol', description: 'Official Pomerol appellation information' },
+      { name: 'Wine Spectator: Pétrus', url: 'https://www.winespectator.com/articles/petrus-pomerol', description: 'Expert reviews and vintage ratings' },
+      { name: 'Liv-ex Fine Wine Exchange', url: 'https://www.liv-ex.com', description: 'Secondary market trading platform for fine wine' },
+    ],
   },
 
   '2009-ch-petrus-pomerol': {
@@ -154,6 +167,12 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
     },
     additionalFoodPairings: ['Kobe beef teppanyaki', 'Black truffle soufflé', 'Roast grouse', 'Venison Wellington', 'Aged Comté cheese (24+ months)', 'Wild boar with blackberry reduction', 'Tournedos Rossini'],
     collectorsNotes: 'The 2009 Château Pétrus is one of the most coveted wines in the world. With perfect scores from multiple critics and production of only 2,500 cases, demand far exceeds supply. Prices have appreciated consistently since the en primeur release and show no signs of plateauing. Authentication is critical at this price point — always purchase from established merchants or auction houses with full provenance documentation. This is a cornerstone wine for any serious collection and a potential heirloom piece that will outlast its owner.',
+    externalLinks: [
+      { name: 'Établissements Jean-Pierre Moueix', url: 'https://www.moueix.com', description: 'Official Pétrus owner and négociant' },
+      { name: 'Bordeaux Wine Council: Pomerol', url: 'https://www.bordeaux.com/en/Our-Terroir/Appellations/Pomerol', description: 'Official Pomerol appellation information' },
+      { name: 'Wine Advocate', url: 'https://www.robertparker.com', description: 'Robert Parker\'s 100-point score for this wine' },
+      { name: 'Liv-ex Fine Wine Exchange', url: 'https://www.liv-ex.com', description: 'Secondary market trading and price data' },
+    ],
   },
 
   '2019-grands-echezeaux-grand-cru-nicole-lamarche': {
@@ -194,6 +213,12 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
     },
     additionalFoodPairings: ['Duck breast with cherry reduction', 'Wild mushroom tart', 'Aged Époisses cheese', 'Roast quail with truffle jus', 'Boeuf Bourguignon (the classic pairing)', 'Pan-seared pigeon breast', 'Risotto with porcini mushrooms'],
     collectorsNotes: 'The 2019 Grands Echézeaux from Domaine Lamarche represents outstanding value in the Grand Cru Burgundy market. While neighbouring vineyards (Romanée-Saint-Vivant, Richebourg) command prices 5-10x higher, Grands Echézeaux offers comparable quality and ageing potential. Domaine Lamarche\'s old vines and Nicole Lamarche\'s improved winemaking make this a compelling acquisition for serious Burgundy collections. Limited production ensures consistent secondary market demand.',
+    externalLinks: [
+      { name: 'Bourgogne Wines Official', url: 'https://www.bourgogne-wines.com', description: 'Official Burgundy wines information body (BIVB)' },
+      { name: 'Domaine Lamarche', url: 'https://www.domaine-lamarche.com', description: 'Official producer website' },
+      { name: 'Climats de Bourgogne (UNESCO)', url: 'https://www.climats-bourgogne.com', description: 'UNESCO World Heritage Burgundy vineyard classification' },
+      { name: 'Burghound', url: 'https://www.burghound.com', description: 'Allen Meadows\' Burgundy specialist reviews' },
+    ],
   },
 }
 

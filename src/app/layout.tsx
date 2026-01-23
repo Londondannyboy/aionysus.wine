@@ -18,8 +18,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aionysus - AI Wine Sommelier & Shop",
-  description: "Discover exceptional wines with your AI sommelier. Browse 3,900+ fine wines from Goedhuis Waddesdon.",
+  metadataBase: new URL('https://aionysus.wine'),
+  title: "Aionysus - AI Wine Sommelier & Fine Wine Shop",
+  description: "Discover exceptional wines with your AI sommelier. Browse 3,900+ fine wines including Burgundy Grand Cru, Bordeaux First Growths, and rare vintages.",
+  openGraph: {
+    type: 'website',
+    siteName: 'Aionysus',
+    locale: 'en_GB',
+  },
+  alternates: {
+    canonical: 'https://aionysus.wine',
+  },
 };
 
 export default function RootLayout({
