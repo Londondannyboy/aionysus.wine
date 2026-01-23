@@ -17,15 +17,28 @@ interface Wine {
   shopify_product_id: string | null
 }
 
+interface MerchantConfigContext {
+  merchant_name: string
+  product_availability: string
+  availability_label: string
+  shipping_label: string
+  shipping_country_code: string
+  return_policy_category: string
+  return_days: number
+  price_currency: string
+  platform_mode: string
+}
+
 interface WinePageContextProps {
   wine: Wine
+  merchantConfig?: MerchantConfigContext
 }
 
 /**
  * Client component that provides wine context to CopilotKit
  * Use this on wine detail pages to let Vic know about the current wine
  */
-export function WinePageContext({ wine }: WinePageContextProps) {
+export function WinePageContext({ wine, merchantConfig }: WinePageContextProps) {
   // Provide detailed wine context to Vic
   useCopilotReadable({
     description: 'The wine currently being viewed on this page',
@@ -44,6 +57,22 @@ export function WinePageContext({ wine }: WinePageContextProps) {
       canAddToCart: !!wine.shopify_product_id,
       shopifyProductId: wine.shopify_product_id,
     },
+  })
+
+  // Provide merchant/platform config to Vic
+  useCopilotReadable({
+    description: 'Platform merchant configuration - availability, shipping, and return policies',
+    value: merchantConfig ? {
+      platformMode: merchantConfig.platform_mode,
+      availability: merchantConfig.availability_label,
+      shipping: merchantConfig.shipping_label,
+      shipsTo: merchantConfig.shipping_country_code,
+      returnPolicy: merchantConfig.return_days > 0
+        ? `${merchantConfig.return_days}-day returns`
+        : 'Returns not currently accepted (demo mode)',
+      currency: merchantConfig.price_currency,
+      merchantName: merchantConfig.merchant_name,
+    } : null,
   })
 
   // Also set a window variable for GlobalCopilotActions to pick up

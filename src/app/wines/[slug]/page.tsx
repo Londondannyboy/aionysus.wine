@@ -1,4 +1,4 @@
-import { getWineBySlug, formatPrice, getWineInvestmentData, WineInvestmentData, getSimilarWines, Wine } from '@/lib/wine-db'
+import { getWineBySlug, formatPrice, getWineInvestmentData, WineInvestmentData, getSimilarWines, Wine, getMerchantConfig, MerchantConfig } from '@/lib/wine-db'
 import { getWineEnrichment } from '@/lib/wine-enrichment'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -457,9 +457,10 @@ export default async function WineDetailPage({ params }: Props) {
     notFound()
   }
 
-  const [investmentData, similarWines] = await Promise.all([
+  const [investmentData, similarWines, merchantConfig] = await Promise.all([
     getWineInvestmentData(wine.id),
-    getSimilarWines(wine.id, wine.region, wine.winery, 4)
+    getSimilarWines(wine.id, wine.region, wine.winery, 4),
+    getMerchantConfig(),
   ])
 
   // Check for skyscraper enrichment content
@@ -482,10 +483,14 @@ export default async function WineDetailPage({ params }: Props) {
   const foodPairings = getFoodPairings(wine.wine_type, wine.grape_variety)
   const drinkingWindow = getDrinkingWindow(wine.vintage, wine.wine_type, wine.classification)
 
+  // Structured data values from merchant config
+  const productImage = wine.image_url || merchantConfig.placeholder_image_url
+  const availabilityUrl = `https://schema.org/${merchantConfig.product_availability}`
+
   return (
     <>
       {/* Provide wine context to CopilotKit so Vic knows about this wine */}
-      <WinePageContext wine={wine} />
+      <WinePageContext wine={wine} merchantConfig={merchantConfig} />
 
       {/* JSON-LD Structured Data for Rich Snippets */}
       <script
@@ -496,17 +501,43 @@ export default async function WineDetailPage({ params }: Props) {
             '@type': 'Product',
             name: fullWineName,
             description: `${fullWineName} from ${wine.winery}, ${wine.region}. ${wine.classification ? `${wine.classification}. ` : ''}${wine.grape_variety ? `${wine.grape_variety} wine` : 'Fine wine'} from ${wine.country}.`,
-            image: wine.image_url || undefined,
+            image: productImage,
             brand: { '@type': 'Brand', name: wine.winery },
             category: wine.wine_type || 'Wine',
             ...(wine.price_retail && {
               offers: {
                 '@type': 'Offer',
                 price: wine.price_retail,
-                priceCurrency: 'GBP',
-                availability: 'https://schema.org/InStock',
-                seller: { '@type': 'Organization', name: 'Aionysus' },
-                url: `https://aionysus.wine/wines/${wine.slug}`,
+                priceCurrency: merchantConfig.price_currency,
+                availability: availabilityUrl,
+                seller: { '@type': 'Organization', name: merchantConfig.merchant_name },
+                url: `${merchantConfig.merchant_url}/wines/${wine.slug}`,
+                shippingDetails: {
+                  '@type': 'OfferShippingDetails',
+                  shippingDestination: {
+                    '@type': 'DefinedRegion',
+                    addressCountry: merchantConfig.shipping_country_code,
+                  },
+                  deliveryTime: {
+                    '@type': 'ShippingDeliveryTime',
+                    handlingTime: {
+                      '@type': 'QuantitativeValue',
+                      minValue: merchantConfig.shipping_handling_days_min,
+                      maxValue: merchantConfig.shipping_handling_days_max,
+                      unitCode: 'DAY',
+                    },
+                  },
+                  shippingRate: {
+                    '@type': 'MonetaryAmount',
+                    value: merchantConfig.shipping_cost_value,
+                    currency: merchantConfig.shipping_cost_currency,
+                  },
+                },
+                hasMerchantReturnPolicy: {
+                  '@type': 'MerchantReturnPolicy',
+                  applicableCountry: merchantConfig.shipping_country_code,
+                  returnPolicyCategory: `https://schema.org/${merchantConfig.return_policy_category}`,
+                },
               },
             }),
             additionalProperty: [
@@ -577,6 +608,7 @@ export default async function WineDetailPage({ params }: Props) {
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200">
                   <span className="text-9xl opacity-40">🍷</span>
+                  <meta itemProp="image" content={merchantConfig.placeholder_image_url} />
                 </div>
               )}
             </div>
@@ -594,7 +626,8 @@ export default async function WineDetailPage({ params }: Props) {
                 <span itemProp="price" content={wine.price_retail?.toString() || '0'}>
                   {formatPrice(wine.price_retail)}
                 </span>
-                <meta itemProp="priceCurrency" content="GBP" />
+                <meta itemProp="priceCurrency" content={merchantConfig.price_currency} />
+                <link itemProp="availability" href={availabilityUrl} />
                 {wine.bottle_size && (
                   <span className="text-base font-normal text-stone-500 ml-2">/ {wine.bottle_size}</span>
                 )}

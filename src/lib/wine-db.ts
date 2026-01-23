@@ -296,6 +296,54 @@ export async function getWineInvestmentData(wineId: number): Promise<WineInvestm
 }
 
 /**
+ * Merchant Config (global platform settings for structured data / availability)
+ */
+export interface MerchantConfig {
+  merchant_name: string
+  merchant_url: string
+  product_availability: string
+  availability_label: string
+  placeholder_image_url: string
+  shipping_country_code: string
+  shipping_handling_days_min: number
+  shipping_handling_days_max: number
+  shipping_cost_currency: string
+  shipping_cost_value: number
+  shipping_label: string
+  return_policy_category: string
+  return_days: number
+  return_method: string
+  price_currency: string
+  platform_mode: string
+}
+
+let merchantConfigCache: { data: MerchantConfig; fetchedAt: number } | null = null
+const CONFIG_TTL_MS = 5 * 60 * 1000 // 5 minutes
+
+export async function getMerchantConfig(): Promise<MerchantConfig> {
+  const now = Date.now()
+  if (merchantConfigCache && (now - merchantConfigCache.fetchedAt) < CONFIG_TTL_MS) {
+    return merchantConfigCache.data
+  }
+
+  const result = await sql`
+    SELECT merchant_name, merchant_url, product_availability, availability_label,
+           placeholder_image_url, shipping_country_code,
+           shipping_handling_days_min, shipping_handling_days_max,
+           shipping_cost_currency, shipping_cost_value, shipping_label,
+           return_policy_category, return_days, return_method,
+           price_currency, platform_mode
+    FROM merchant_config
+    WHERE id = 1
+    LIMIT 1
+  `
+
+  const config = result[0] as MerchantConfig
+  merchantConfigCache = { data: config, fetchedAt: now }
+  return config
+}
+
+/**
  * Get wines by appellation/sub-region (exact name match in region field)
  */
 export async function getWinesByAppellation(appellation: string, limit: number = 50): Promise<Wine[]> {

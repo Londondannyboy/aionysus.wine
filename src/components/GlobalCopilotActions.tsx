@@ -27,11 +27,20 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
   const [cartCount, setCartCount] = useState(0)
   const [searchResults, setSearchResults] = useState<Wine[]>([])
   const [vicPushedBottle, setVicPushedBottle] = useState(false)
+  const [platformConfig, setPlatformConfig] = useState<Record<string, string> | null>(null)
 
   // Check session storage for Vic's bottle push
   useEffect(() => {
     const pushed = sessionStorage.getItem('vic_pushed_bottle')
     if (pushed) setVicPushedBottle(true)
+  }, [])
+
+  // Fetch platform/merchant config
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => setPlatformConfig(data))
+      .catch(() => {})
   }, [])
 
   // Get or create Shopify cart
@@ -101,6 +110,12 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
       itemCount: cartCount,
       hasCart: !!cartId,
     },
+  })
+
+  // Provide platform/merchant config so Vic can answer shipping, availability, returns questions
+  useCopilotReadable({
+    description: 'Platform merchant configuration - availability status, shipping policy, and return policy for Aionysus wines',
+    value: platformConfig,
   })
 
   // ============ COPILOTKIT ACTIONS ============
