@@ -296,6 +296,35 @@ export async function getWineInvestmentData(wineId: number): Promise<WineInvestm
 }
 
 /**
+ * Get wines by appellation/sub-region (exact name match in region field)
+ */
+export async function getWinesByAppellation(appellation: string, limit: number = 50): Promise<Wine[]> {
+  const wines = await sql`
+    SELECT id, name, slug, winery, region, country, grape_variety,
+           vintage, wine_type, style, color, price_retail, price_trade,
+           bottle_size, tasting_notes, image_url, stock_quantity,
+           case_size, classification, original_url, aionysus_url, shopify_product_id
+    FROM wines
+    WHERE region ILIKE ${'%' + appellation + '%'} AND is_active = true
+    ORDER BY vintage DESC NULLS LAST, price_retail DESC NULLS LAST
+    LIMIT ${limit}
+  `
+  return wines as Wine[]
+}
+
+/**
+ * Count wines by appellation/sub-region
+ */
+export async function countWinesByAppellation(appellation: string): Promise<number> {
+  const result = await sql`
+    SELECT COUNT(*) as count
+    FROM wines
+    WHERE region ILIKE ${'%' + appellation + '%'} AND is_active = true
+  `
+  return Number(result[0].count)
+}
+
+/**
  * Get similar wines by region or producer
  */
 export async function getSimilarWines(

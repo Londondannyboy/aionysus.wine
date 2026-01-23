@@ -162,6 +162,18 @@ export default function Home() {
             >
               Bordeaux
             </Link>
+            <Link
+              href="/regions/gevrey-chambertin"
+              className="px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-colors border border-white/10"
+            >
+              Gevrey-Chambertin
+            </Link>
+            <Link
+              href="/regions/chassagne-montrachet"
+              className="px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-colors border border-white/10"
+            >
+              Chassagne-Montrachet
+            </Link>
           </motion.div>
         </div>
 

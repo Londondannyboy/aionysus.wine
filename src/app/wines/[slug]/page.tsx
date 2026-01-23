@@ -1,4 +1,5 @@
 import { getWineBySlug, formatPrice, getWineInvestmentData, WineInvestmentData, getSimilarWines, Wine } from '@/lib/wine-db'
+import { getWineEnrichment } from '@/lib/wine-enrichment'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -19,8 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const fullName = `${wine.vintage ? `${wine.vintage} ` : ''}${wine.name}`
-  const title = `${fullName} | ${wine.winery} | Buy ${wine.name} | Aionysus`
-  const description = `Buy ${fullName} from ${wine.winery}, ${wine.region}. ${wine.name} tasting notes, investment profile, food pairings. Shop ${wine.name} from ${wine.country} at Aionysus.`
+  const priceStr = wine.price_retail ? ` | From £${Math.round(wine.price_retail)}` : ''
+  const title = `${fullName} | ${wine.winery}${priceStr} | Aionysus`
+  const description = `${fullName} from ${wine.winery}, ${wine.region}${wine.country ? `, ${wine.country}` : ''}.${wine.price_retail ? ` From £${Math.round(wine.price_retail)}.` : ''} Expert tasting notes, food pairings${wine.classification ? `, ${wine.classification}` : ''}. Buy ${wine.name} online at Aionysus.`
 
   return {
     title,
@@ -457,6 +459,21 @@ export default async function WineDetailPage({ params }: Props) {
     getSimilarWines(wine.id, wine.region, wine.winery, 4)
   ])
 
+  // Check for skyscraper enrichment content
+  const enrichment = getWineEnrichment(slug)
+
+  // Map regions to dedicated region pages for internal linking
+  const REGION_PAGE_MAP: Record<string, { slug: string; name: string }> = {
+    'gevrey': { slug: 'gevrey-chambertin', name: 'Gevrey-Chambertin' },
+    'gevrey-chambertin': { slug: 'gevrey-chambertin', name: 'Gevrey-Chambertin' },
+    'gevrey chambertin': { slug: 'gevrey-chambertin', name: 'Gevrey-Chambertin' },
+    'chassagne': { slug: 'chassagne-montrachet', name: 'Chassagne-Montrachet' },
+    'chassagne-montrachet': { slug: 'chassagne-montrachet', name: 'Chassagne-Montrachet' },
+    'chassagne montrachet': { slug: 'chassagne-montrachet', name: 'Chassagne-Montrachet' },
+  }
+  const regionLower = (wine.region || '').toLowerCase()
+  const regionPage = Object.entries(REGION_PAGE_MAP).find(([key]) => regionLower.includes(key))?.[1] || null
+
   // Full wine name for SEO (used 6+ times throughout page)
   const fullWineName = `${wine.vintage ? `${wine.vintage} ` : ''}${wine.name}`
   const foodPairings = getFoodPairings(wine.wine_type, wine.grape_variety)
@@ -466,6 +483,38 @@ export default async function WineDetailPage({ params }: Props) {
     <>
       {/* Provide wine context to CopilotKit so Vic knows about this wine */}
       <WinePageContext wine={wine} />
+
+      {/* JSON-LD Structured Data for Rich Snippets */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: fullWineName,
+            description: `${fullWineName} from ${wine.winery}, ${wine.region}. ${wine.classification ? `${wine.classification}. ` : ''}${wine.grape_variety ? `${wine.grape_variety} wine` : 'Fine wine'} from ${wine.country}.`,
+            image: wine.image_url || undefined,
+            brand: { '@type': 'Brand', name: wine.winery },
+            category: wine.wine_type || 'Wine',
+            ...(wine.price_retail && {
+              offers: {
+                '@type': 'Offer',
+                price: wine.price_retail,
+                priceCurrency: 'GBP',
+                availability: 'https://schema.org/InStock',
+                seller: { '@type': 'Organization', name: 'Aionysus' },
+                url: `https://aionysus.wine/wines/${wine.slug}`,
+              },
+            }),
+            additionalProperty: [
+              ...(wine.region ? [{ '@type': 'PropertyValue', name: 'Region', value: wine.region }] : []),
+              ...(wine.vintage ? [{ '@type': 'PropertyValue', name: 'Vintage', value: wine.vintage.toString() }] : []),
+              ...(wine.grape_variety ? [{ '@type': 'PropertyValue', name: 'Grape Variety', value: wine.grape_variety }] : []),
+              ...(wine.classification ? [{ '@type': 'PropertyValue', name: 'Classification', value: wine.classification }] : []),
+            ],
+          }),
+        }}
+      />
 
       <div className="min-h-screen bg-white">
         {/* Header Bar */}
@@ -491,8 +540,12 @@ export default async function WineDetailPage({ params }: Props) {
             {wine.region && (
               <>
                 <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
-                  <Link href={`/wines?region=${encodeURIComponent(wine.region)}`} className="hover:text-burgundy-700" itemProp="item">
-                    <span itemProp="name">{wine.region}</span>
+                  <Link
+                    href={regionPage ? `/regions/${regionPage.slug}` : `/wines?region=${encodeURIComponent(wine.region)}`}
+                    className="hover:text-burgundy-700"
+                    itemProp="item"
+                  >
+                    <span itemProp="name">{regionPage ? regionPage.name : wine.region}</span>
                   </Link>
                   <meta itemProp="position" content="2" />
                 </li>
@@ -637,6 +690,143 @@ export default async function WineDetailPage({ params }: Props) {
                 dangerouslySetInnerHTML={{ __html: wine.tasting_notes }}
               />
             </section>
+          )}
+
+          {/* Skyscraper Enrichment Sections (for priority wines) */}
+          {enrichment && (
+            <>
+              {/* Why This Wine Is Special */}
+              <section className="mt-10" aria-labelledby="special-heading">
+                <h2 id="special-heading" className="text-2xl font-bold text-stone-900 mb-4">
+                  Why {fullWineName} Is Special
+                </h2>
+                <div className="grid md:grid-cols-2 gap-8 items-start">
+                  <ul className="space-y-3">
+                    {enrichment.whySpecial.map((point, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <span className="w-2 h-2 rounded-full bg-burgundy-500 flex-shrink-0 mt-2" />
+                        <span className="text-stone-700">{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
+                    <img
+                      src={enrichment.heroImage}
+                      alt={enrichment.heroAlt}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* Producer Profile */}
+              <section className="mt-10 bg-stone-50 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="producer-heading">
+                <h2 id="producer-heading" className="text-2xl font-bold text-stone-900 mb-4">
+                  About {enrichment.producerProfile.name}
+                </h2>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2 space-y-4">
+                    <p className="text-stone-700 leading-relaxed">{enrichment.producerProfile.history}</p>
+                    <p className="text-stone-700 leading-relaxed"><strong>Philosophy:</strong> {enrichment.producerProfile.philosophy}</p>
+                  </div>
+                  <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
+                    <img
+                      src={enrichment.producerProfile.image}
+                      alt={enrichment.producerProfile.imageAlt}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* Vintage Analysis */}
+              <section className="mt-10" aria-labelledby="vintage-heading">
+                <h2 id="vintage-heading" className="text-2xl font-bold text-stone-900 mb-4">
+                  {fullWineName}: Vintage Analysis
+                </h2>
+                <p className="text-stone-700 leading-relaxed text-lg">{enrichment.vintageAnalysis}</p>
+              </section>
+
+              {/* Critical Acclaim */}
+              {enrichment.criticalAcclaim.length > 0 && (
+                <section className="mt-10" aria-labelledby="acclaim-heading">
+                  <h2 id="acclaim-heading" className="text-2xl font-bold text-stone-900 mb-4">
+                    {fullWineName} Critical Acclaim
+                  </h2>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {enrichment.criticalAcclaim.map((review, i) => (
+                      <div key={i} className="bg-stone-50 border border-stone-200 rounded-xl p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-stone-600">{review.source}</span>
+                          <span className="px-2 py-1 bg-burgundy-100 text-burgundy-700 text-sm font-bold rounded">{review.score}</span>
+                        </div>
+                        <p className="text-stone-700 text-sm italic">&ldquo;{review.quote}&rdquo;</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Context Section (unique deep-dive content) */}
+              <section className="mt-10" aria-labelledby="context-heading">
+                <h2 id="context-heading" className="text-2xl font-bold text-stone-900 mb-4">
+                  {enrichment.contextSection.title}
+                </h2>
+                <p className="text-stone-700 leading-relaxed text-lg">{enrichment.contextSection.content}</p>
+              </section>
+
+              {/* Cellaring Guide */}
+              <section className="mt-10 bg-stone-50 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="cellar-heading">
+                <h2 id="cellar-heading" className="text-2xl font-bold text-stone-900 mb-4">
+                  Cellaring {fullWineName}
+                </h2>
+                <div className="grid md:grid-cols-2 gap-6 mb-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <span className="text-sm font-semibold text-stone-500 w-24 flex-shrink-0">Temperature</span>
+                      <span className="text-stone-700">{enrichment.cellaring.temperature}</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="text-sm font-semibold text-stone-500 w-24 flex-shrink-0">Humidity</span>
+                      <span className="text-stone-700">{enrichment.cellaring.humidity}</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="text-sm font-semibold text-stone-500 w-24 flex-shrink-0">Position</span>
+                      <span className="text-stone-700">{enrichment.cellaring.position}</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="text-sm font-semibold text-stone-500 w-24 flex-shrink-0">Peak Window</span>
+                      <span className="text-stone-700 font-medium">{enrichment.cellaring.peakWindow}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-stone-700 leading-relaxed">{enrichment.cellaring.advice}</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Enhanced Food Pairings */}
+              <section className="mt-10" aria-labelledby="enhanced-pairings-heading">
+                <h2 id="enhanced-pairings-heading" className="text-2xl font-bold text-stone-900 mb-4">
+                  Expert Food Pairings for {fullWineName}
+                </h2>
+                <div className="flex flex-wrap gap-3">
+                  {enrichment.additionalFoodPairings.map((pairing) => (
+                    <span key={pairing} className="px-4 py-2 bg-burgundy-50 border border-burgundy-200 rounded-full text-burgundy-700">
+                      {pairing}
+                    </span>
+                  ))}
+                </div>
+              </section>
+
+              {/* Collector's Notes */}
+              <section className="mt-10 bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="collectors-heading">
+                <h2 id="collectors-heading" className="text-2xl font-bold text-stone-900 mb-4">
+                  Collector&apos;s Notes: {fullWineName}
+                </h2>
+                <p className="text-stone-700 leading-relaxed">{enrichment.collectorsNotes}</p>
+              </section>
+            </>
           )}
 
           {/* Investment Profile (H2 with wine name - Mention 5) */}
