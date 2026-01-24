@@ -388,13 +388,16 @@ export async function getSimilarWines(
   winery: string | null,
   limit: number = 4
 ): Promise<Wine[]> {
-  // Try to find wines from same region first, excluding current wine
+  // Try same region first — only wines with product images
   if (region) {
     const wines = await sql`
       SELECT id, name, slug, winery, region, country, grape_variety,
              vintage, wine_type, price_retail, image_url
       FROM wines
       WHERE region ILIKE ${region} AND id != ${wineId} AND is_active = true
+        AND image_url IS NOT NULL
+        AND image_url NOT LIKE '%placeholder%'
+        AND image_url NOT LIKE '/Users/%'
       ORDER BY RANDOM()
       LIMIT ${limit}
     `
@@ -403,22 +406,25 @@ export async function getSimilarWines(
     }
   }
 
-  // Fallback to same producer
+  // Try same producer — only wines with product images
   if (winery) {
     const wines = await sql`
       SELECT id, name, slug, winery, region, country, grape_variety,
              vintage, wine_type, price_retail, image_url
       FROM wines
       WHERE winery ILIKE ${winery} AND id != ${wineId} AND is_active = true
+        AND image_url IS NOT NULL
+        AND image_url NOT LIKE '%placeholder%'
+        AND image_url NOT LIKE '/Users/%'
       ORDER BY RANDOM()
       LIMIT ${limit}
     `
-    if (wines.length > 0) {
+    if (wines.length >= limit) {
       return wines as Wine[]
     }
   }
 
-  // Fallback to random wines, preferring those with real web-accessible images
+  // Fallback to any wines with product images
   const wines = await sql`
     SELECT id, name, slug, winery, region, country, grape_variety,
            vintage, wine_type, price_retail, image_url
@@ -430,18 +436,34 @@ export async function getSimilarWines(
     ORDER BY RANDOM()
     LIMIT ${limit}
   `
-  if (wines.length >= limit) {
-    return wines as Wine[]
-  }
+  return wines as Wine[]
+}
 
-  // Final fallback if not enough wines with images
-  const allWines = await sql`
+/**
+ * Get wines from the same region (with product images only)
+ * For the "From the Same Region" section — different from similar wines
+ */
+export async function getWinesFromRegion(
+  wineId: number,
+  region: string | null,
+  excludeIds: number[],
+  limit: number = 4
+): Promise<Wine[]> {
+  if (!region) return []
+
+  const wines = await sql`
     SELECT id, name, slug, winery, region, country, grape_variety,
            vintage, wine_type, price_retail, image_url
     FROM wines
-    WHERE id != ${wineId} AND is_active = true
+    WHERE region ILIKE ${'%' + region + '%'}
+      AND id != ${wineId}
+      AND id != ALL(${excludeIds})
+      AND is_active = true
+      AND image_url IS NOT NULL
+      AND image_url NOT LIKE '%placeholder%'
+      AND image_url NOT LIKE '/Users/%'
     ORDER BY RANDOM()
     LIMIT ${limit}
   `
-  return allWines as Wine[]
+  return wines as Wine[]
 }

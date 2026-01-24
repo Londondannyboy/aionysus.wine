@@ -1,4 +1,4 @@
-import { getWineBySlug, formatPrice, getWineInvestmentData, WineInvestmentData, getSimilarWines, Wine, getMerchantConfig, MerchantConfig } from '@/lib/wine-db'
+import { getWineBySlug, formatPrice, getWineInvestmentData, WineInvestmentData, getSimilarWines, getWinesFromRegion, Wine, getMerchantConfig, MerchantConfig } from '@/lib/wine-db'
 import { getWineEnrichment } from '@/lib/wine-enrichment'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -529,6 +529,10 @@ export default async function WineDetailPage({ params }: Props) {
     getSimilarWines(wine.id, wine.region, wine.winery, 4),
     getMerchantConfig(),
   ])
+
+  // Fetch region wines, excluding those already in similar wines
+  const similarIds = similarWines.map(w => w.id)
+  const regionWines = await getWinesFromRegion(wine.id, wine.region, similarIds, 4)
 
   // Check for skyscraper enrichment content
   const enrichment = getWineEnrichment(slug)
@@ -1061,6 +1065,41 @@ export default async function WineDetailPage({ params }: Props) {
 
           {/* Similar Wines */}
           <SimilarWinesSection wines={similarWines} currentRegion={wine.region} wineName={fullWineName} />
+
+          {/* From the Same Region */}
+          {regionWines.length > 0 && wine.region && (
+            <section className="mt-14" aria-labelledby="region-wines-heading">
+              <h2 id="region-wines-heading" className="text-2xl font-bold text-stone-900 mb-2">
+                More from {wine.region}
+              </h2>
+              <p className="text-stone-600 mb-6">
+                Explore other wines from the {wine.region} region — different producers, vintages, and styles.
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {regionWines.map((rw) => (
+                  <Link key={rw.id} href={`/wines/${rw.slug}`}
+                    className="group bg-white border border-stone-200 rounded-xl overflow-hidden hover:border-burgundy-400 hover:shadow-lg transition-all">
+                    <div className="aspect-[3/4] bg-stone-100 relative overflow-hidden">
+                      <WineCardImage
+                        src={rw.image_url}
+                        alt={`${rw.vintage || ''} ${rw.name} from ${rw.winery}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h3 className="font-semibold text-stone-900 text-sm line-clamp-2 group-hover:text-burgundy-700 transition-colors">
+                        {rw.vintage && `${rw.vintage} `}{rw.name}
+                      </h3>
+                      <p className="text-xs text-stone-500 mt-1">{rw.winery}</p>
+                      {rw.price_retail && (
+                        <p className="text-sm font-bold text-stone-900 mt-2">{formatPrice(rw.price_retail)}</p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Final CTA */}
           <section className="mt-10 bg-stone-50 border border-stone-200 rounded-xl p-8 text-center">
