@@ -137,7 +137,11 @@ const REGION_INFO: Record<string, RegionData> = {
     famousProducers: ['Château Lafite Rothschild', 'Château Margaux', 'Château Latour', 'Petrus', 'Château Cheval Blanc'],
     externalLinks: [
       { name: 'Bordeaux Wine Council', url: 'https://www.bordeaux.com' },
-      { name: 'Wine Spectator Bordeaux', url: 'https://www.winespectator.com/regions/bordeaux' },
+      { name: 'Wikipedia: Bordeaux Wine', url: 'https://en.wikipedia.org/wiki/Bordeaux_wine' },
+      { name: 'Wine Spectator: Bordeaux', url: 'https://www.winespectator.com/regions/bordeaux' },
+      { name: 'Jancis Robinson: Bordeaux', url: 'https://www.jancisrobinson.com/learn/wine-regions/france/bordeaux' },
+      { name: 'Decanter: Bordeaux Guide', url: 'https://www.decanter.com/wine/wine-regions/bordeaux/' },
+      { name: 'Liv-ex: Bordeaux Market', url: 'https://www.liv-ex.com' },
     ],
   },
   'Burgundy': {
@@ -156,7 +160,12 @@ const REGION_INFO: Record<string, RegionData> = {
     bestTimeToVisit: 'September-October for harvest, or May-June',
     famousProducers: ['Domaine de la Romanée-Conti', 'Domaine Leroy', 'Domaine Armand Rousseau'],
     externalLinks: [
-      { name: 'Bourgogne Wines Official', url: 'https://www.bourgogne-wines.com' },
+      { name: 'Bourgogne Wines (BIVB)', url: 'https://www.bourgogne-wines.com' },
+      { name: 'Wikipedia: Burgundy Wine', url: 'https://en.wikipedia.org/wiki/Burgundy_wine' },
+      { name: 'Climats de Bourgogne (UNESCO)', url: 'https://www.climats-bourgogne.com' },
+      { name: 'Jancis Robinson: Burgundy', url: 'https://www.jancisrobinson.com/learn/wine-regions/france/burgundy' },
+      { name: 'Decanter: Burgundy Guide', url: 'https://www.decanter.com/wine/wine-regions/burgundy/' },
+      { name: 'Burghound', url: 'https://www.burghound.com' },
     ],
   },
   'Champagne': {
@@ -174,7 +183,11 @@ const REGION_INFO: Record<string, RegionData> = {
     bestTimeToVisit: 'April-October, harvest in September-October',
     famousProducers: ['Krug', 'Dom Pérignon', 'Salon', 'Bollinger'],
     externalLinks: [
-      { name: 'Champagne Official', url: 'https://www.champagne.fr' },
+      { name: 'Comité Champagne', url: 'https://www.champagne.fr' },
+      { name: 'Wikipedia: Champagne', url: 'https://en.wikipedia.org/wiki/Champagne_(wine)' },
+      { name: 'Wine Spectator: Champagne', url: 'https://www.winespectator.com/regions/champagne' },
+      { name: 'Jancis Robinson: Champagne', url: 'https://www.jancisrobinson.com/learn/wine-regions/france/champagne' },
+      { name: 'Decanter: Champagne Guide', url: 'https://www.decanter.com/wine/wine-regions/champagne/' },
     ],
   },
   'Madeira': {
@@ -193,6 +206,11 @@ const REGION_INFO: Record<string, RegionData> = {
     famousProducers: ['Blandy\'s', 'Henriques & Henriques', 'Barbeito', 'd\'Oliveiras'],
     externalLinks: [
       { name: 'Visit Madeira', url: 'https://www.visitmadeira.pt' },
+      { name: 'Wikipedia: Madeira Wine', url: 'https://en.wikipedia.org/wiki/Madeira_wine' },
+      { name: 'Madeira Wine Institute (IVBAM)', url: 'https://www.ivbam.gov-madeira.pt' },
+      { name: 'Jancis Robinson: Madeira', url: 'https://www.jancisrobinson.com/learn/wine-regions/portugal/madeira' },
+      { name: 'Decanter: Madeira Guide', url: 'https://www.decanter.com/wine/wine-regions/madeira/' },
+      { name: 'Wine Spectator: Madeira', url: 'https://www.winespectator.com/articles/vintage-madeira' },
     ],
   },
 }
@@ -291,13 +309,16 @@ function RegionSection({ region, wineName }: { region: string; wineName: string 
       )}
 
       {/* External Links */}
-      <div className="flex flex-wrap gap-3">
-        {info.externalLinks.map((link) => (
-          <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer"
-            className="px-4 py-2 bg-white border border-stone-200 rounded-lg text-stone-600 hover:text-burgundy-700 text-sm transition-colors">
-            {link.name} →
-          </a>
-        ))}
+      <div className="bg-stone-50 rounded-xl p-6 border border-stone-200">
+        <h4 className="text-sm font-semibold text-stone-900 uppercase tracking-wider mb-4">Authority Resources</h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {info.externalLinks.map((link) => (
+            <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer"
+              className="px-3 py-2 bg-white border border-stone-200 rounded-lg text-stone-700 hover:text-burgundy-700 hover:border-burgundy-300 text-sm font-medium transition-colors">
+              {link.name} →
+            </a>
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -745,6 +766,32 @@ export default async function WineDetailPage({ params }: Props) {
             </div>
           </section>
 
+          {/* Investment Profile (moved higher for prominence) */}
+          {investmentData && (
+            <section className="mt-14" aria-labelledby="investment-heading">
+              <h2 id="investment-heading" className="text-2xl font-bold text-stone-900 mb-6">
+                Investment Profile: {seoKeyword}
+              </h2>
+              <InvestmentCharts
+                prices={[
+                  { year: '2020', price: investmentData.price_2020 },
+                  { year: '2021', price: investmentData.price_2021 },
+                  { year: '2022', price: investmentData.price_2022 },
+                  { year: '2023', price: investmentData.price_2023 },
+                  { year: '2024', price: investmentData.price_2024 },
+                  { year: '2025', price: investmentData.price_2025 },
+                ]}
+                annualReturn={investmentData.annual_return_pct}
+                volatility={investmentData.volatility_score}
+                liquidity={investmentData.liquidity_score}
+                projectedReturn={investmentData.projected_5yr_return}
+                rating={investmentData.investment_rating}
+                recommendation={investmentData.analyst_recommendation}
+                wineName={seoKeyword}
+              />
+            </section>
+          )}
+
           {/* Tasting Notes (H2 with wine name - Mention 4) */}
           {wine.tasting_notes && (
             <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="tasting-heading">
@@ -754,7 +801,7 @@ export default async function WineDetailPage({ params }: Props) {
                   alt={`Wine tasting notes for ${seoKeyword}`}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black/80" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/40 to-black/60" />
                 <div className="relative py-12 px-8 md:px-12">
                   <h2 id="tasting-heading" className="text-3xl font-light text-white tracking-tight mb-8">
                     {seoKeyword} Tasting Notes
@@ -774,7 +821,7 @@ export default async function WineDetailPage({ params }: Props) {
                   alt={`${wine.region}, ${wine.country} - home of ${seoKeyword}`}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/60 to-black/40" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/35 to-transparent" />
                 <div className="relative py-16 lg:py-24 px-8 lg:px-16 max-w-3xl">
                   <h2 id="region-travel-heading" className="text-3xl lg:text-5xl font-light text-white tracking-tight mb-8">
                     {enrichment.regionTravel.title}
@@ -806,7 +853,7 @@ export default async function WineDetailPage({ params }: Props) {
                     alt={enrichment.heroAlt}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
                   <div className="relative py-14 px-8 md:px-12 max-w-2xl">
                     <h2 id="special-heading" className="text-3xl font-light text-white tracking-tight mb-8">
                       Why {seoKeyword} Is Special
@@ -831,14 +878,20 @@ export default async function WineDetailPage({ params }: Props) {
                     alt={enrichment.producerProfile.imageAlt}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/20" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/35 to-black/10" />
                   <div className="relative py-14 px-8 md:px-12 flex flex-col justify-end min-h-[400px]">
                     <h2 id="producer-heading" className="text-3xl font-light text-white tracking-tight mb-6">
                       About {enrichment.producerProfile.name}
                     </h2>
-                    <div className="space-y-4 max-w-3xl">
-                      <p className="text-white/85 leading-loose">{enrichment.producerProfile.history}</p>
-                      <p className="text-white/80 leading-loose"><span className="text-white font-medium">Philosophy:</span> {enrichment.producerProfile.philosophy}</p>
+                    <div className="space-y-5 max-w-3xl">
+                      <div>
+                        <h3 className="text-sm uppercase tracking-widest text-white/60 mb-2 font-semibold">History &amp; Heritage</h3>
+                        <p className="text-white/90 leading-relaxed text-[15px]">{enrichment.producerProfile.history}</p>
+                      </div>
+                      <div>
+                        <h3 className="text-sm uppercase tracking-widest text-white/60 mb-2 font-semibold">Winemaking Philosophy</h3>
+                        <p className="text-white/90 leading-relaxed text-[15px]">{enrichment.producerProfile.philosophy}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -852,20 +905,21 @@ export default async function WineDetailPage({ params }: Props) {
                     alt={`Vineyard harvest - vintage analysis for ${seoKeyword}`}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/65 to-black/40" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/40 to-black/20" />
                   <div className="relative py-12 px-8 md:px-12 max-w-3xl">
-                    <h2 id="vintage-heading" className="text-3xl font-light text-white tracking-tight mb-8">
+                    <h2 id="vintage-heading" className="text-3xl font-light text-white tracking-tight mb-4">
                       {seoKeyword}: Vintage Analysis
                     </h2>
-                    <div className="space-y-4">
+                    <h3 className="text-sm uppercase tracking-widest text-white/60 mb-6 font-semibold">Growing Conditions &amp; Wine Character</h3>
+                    <div className="space-y-5">
                       {enrichment.vintageAnalysis.split('. ').reduce((acc: string[], sentence, i, arr) => {
-                        const chunkSize = Math.ceil(arr.length / 2)
+                        const chunkSize = Math.ceil(arr.length / 3)
                         const chunkIndex = Math.floor(i / chunkSize)
                         if (!acc[chunkIndex]) acc[chunkIndex] = ''
                         acc[chunkIndex] += sentence + (i < arr.length - 1 ? '. ' : '')
                         return acc
                       }, []).map((para, i) => (
-                        <p key={i} className="text-white/85 leading-loose text-base">{para}</p>
+                        <p key={i} className="text-white/90 leading-relaxed text-[15px]">{para}</p>
                       ))}
                     </div>
                   </div>
@@ -881,7 +935,7 @@ export default async function WineDetailPage({ params }: Props) {
                       alt={`Wine tasting - critical acclaim for ${seoKeyword}`}
                       className="absolute inset-0 w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/70" />
+                    <div className="absolute inset-0 bg-black/50" />
                     <div className="relative py-12 px-8 md:px-12">
                       <h2 id="acclaim-heading" className="text-3xl font-light text-white tracking-tight mb-8">
                         {seoKeyword} Critical Acclaim
@@ -910,11 +964,12 @@ export default async function WineDetailPage({ params }: Props) {
                     alt={`Wine history - ${enrichment.contextSection.title}`}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/50" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/45 to-black/25" />
                   <div className="relative py-14 px-8 md:px-12 max-w-3xl">
-                    <h2 id="context-heading" className="text-3xl font-light text-white tracking-tight mb-8">
+                    <h2 id="context-heading" className="text-3xl font-light text-white tracking-tight mb-4">
                       {enrichment.contextSection.title}
                     </h2>
+                    <h3 className="text-sm uppercase tracking-widest text-white/60 mb-6 font-semibold">Historical Context &amp; Significance</h3>
                     <div className="space-y-5">
                       {enrichment.contextSection.content.split('. ').reduce((acc: string[], sentence, i, arr) => {
                         const chunkSize = Math.ceil(arr.length / 3)
@@ -923,7 +978,7 @@ export default async function WineDetailPage({ params }: Props) {
                         acc[chunkIndex] += sentence + (i < arr.length - 1 ? '. ' : '')
                         return acc
                       }, []).map((para, i) => (
-                        <p key={i} className="text-white/85 leading-loose text-base">{para}</p>
+                        <p key={i} className="text-white/90 leading-relaxed text-[15px]">{para}</p>
                       ))}
                     </div>
                   </div>
@@ -938,11 +993,12 @@ export default async function WineDetailPage({ params }: Props) {
                     alt={`Wine cellar - cellaring guide for ${seoKeyword}`}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/40 to-black/20" />
                   <div className="relative py-12 px-8 md:px-12">
-                    <h2 id="cellar-heading" className="text-3xl font-light text-white tracking-tight mb-8">
+                    <h2 id="cellar-heading" className="text-3xl font-light text-white tracking-tight mb-2">
                       Cellaring {seoKeyword}
                     </h2>
+                    <h3 className="text-sm uppercase tracking-widest text-white/60 mb-8 font-semibold">Storage Recommendations &amp; Drinking Window</h3>
                     <div className="grid md:grid-cols-2 gap-8">
                       <div className="space-y-5">
                         <div className="flex items-start gap-4">
@@ -1014,12 +1070,13 @@ export default async function WineDetailPage({ params }: Props) {
                     alt={`Wine collection - collector's notes for ${seoKeyword}`}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/65 to-black/50" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/40 to-black/20" />
                   <div className="relative py-12 px-8 md:px-12 max-w-3xl">
-                    <h2 id="collectors-heading" className="text-3xl font-light text-white tracking-tight mb-6">
+                    <h2 id="collectors-heading" className="text-3xl font-light text-white tracking-tight mb-2">
                       Collector&apos;s Notes: {seoKeyword}
                     </h2>
-                    <div className="space-y-4">
+                    <h3 className="text-sm uppercase tracking-widest text-white/60 mb-6 font-semibold">Provenance, Authentication &amp; Value</h3>
+                    <div className="space-y-5">
                       {enrichment.collectorsNotes.split('. ').reduce((acc: string[], sentence, i, arr) => {
                         const chunkSize = Math.ceil(arr.length / 3)
                         const chunkIndex = Math.floor(i / chunkSize)
@@ -1027,7 +1084,7 @@ export default async function WineDetailPage({ params }: Props) {
                         acc[chunkIndex] += sentence + (i < arr.length - 1 ? '. ' : '')
                         return acc
                       }, []).map((para, i) => (
-                        <p key={i} className="text-white/85 leading-loose text-base">{para}</p>
+                        <p key={i} className="text-white/90 leading-relaxed text-[15px]">{para}</p>
                       ))}
                     </div>
                   </div>
@@ -1036,24 +1093,30 @@ export default async function WineDetailPage({ params }: Props) {
 
               {/* External Authority Links */}
               {enrichment.externalLinks.length > 0 && (
-                <section className="mt-14" aria-labelledby="resources-heading">
-                  <h2 id="resources-heading" className="text-2xl font-bold text-stone-900 mb-4">
-                    Further Reading &amp; Resources
-                  </h2>
-                  <div className="grid md:grid-cols-2 gap-3">
+                <section className="mt-14 bg-stone-50 rounded-2xl p-8 border border-stone-200" aria-labelledby="resources-heading">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-burgundy-100 rounded-lg flex items-center justify-center">
+                      <span className="text-burgundy-700 text-sm font-bold">+</span>
+                    </div>
+                    <h2 id="resources-heading" className="text-2xl font-bold text-stone-900">
+                      Further Reading &amp; Resources
+                    </h2>
+                  </div>
+                  <p className="text-stone-600 mb-6 ml-11">Expert guides, official sources, and authority references for {seoKeyword}.</p>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {enrichment.externalLinks.map((link) => (
                       <a
                         key={link.url}
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-start gap-3 p-4 bg-white border border-stone-200 rounded-lg hover:border-burgundy-400 transition-colors"
+                        className="group flex items-start gap-3 p-4 bg-white border border-stone-200 rounded-xl hover:border-burgundy-400 hover:shadow-md transition-all"
                       >
-                        <div>
-                          <span className="font-medium text-stone-900 hover:text-burgundy-700">{link.name}</span>
-                          <p className="text-sm text-stone-500 mt-0.5">{link.description}</p>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold text-stone-900 group-hover:text-burgundy-700 transition-colors text-sm">{link.name}</span>
+                          <p className="text-xs text-stone-500 mt-1 line-clamp-2">{link.description}</p>
                         </div>
-                        <span className="text-stone-400 flex-shrink-0 mt-0.5">&rarr;</span>
+                        <span className="text-stone-300 group-hover:text-burgundy-500 flex-shrink-0 mt-0.5 transition-colors">&rarr;</span>
                       </a>
                     ))}
                   </div>
@@ -1085,36 +1148,6 @@ export default async function WineDetailPage({ params }: Props) {
                   >
                     Chat with Vic →
                   </Link>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Investment Profile (H2 with wine name - Mention 5) */}
-          {investmentData && (
-            <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="investment-heading">
-              <div className="relative bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 py-12 px-6 md:px-10">
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(124,58,237,0.3) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(34,197,94,0.2) 0%, transparent 50%)' }} />
-                </div>
-                <div className="relative">
-                  <InvestmentCharts
-                    prices={[
-                      { year: '2020', price: investmentData.price_2020 },
-                      { year: '2021', price: investmentData.price_2021 },
-                      { year: '2022', price: investmentData.price_2022 },
-                      { year: '2023', price: investmentData.price_2023 },
-                      { year: '2024', price: investmentData.price_2024 },
-                      { year: '2025', price: investmentData.price_2025 },
-                    ]}
-                    annualReturn={investmentData.annual_return_pct}
-                    volatility={investmentData.volatility_score}
-                    liquidity={investmentData.liquidity_score}
-                    projectedReturn={investmentData.projected_5yr_return}
-                    rating={investmentData.investment_rating}
-                    recommendation={investmentData.analyst_recommendation}
-                    wineName={seoKeyword}
-                  />
                 </div>
               </div>
             </section>
