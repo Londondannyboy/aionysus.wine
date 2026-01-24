@@ -375,7 +375,7 @@ function TastingNotesDisplay({ notes }: { notes: string }) {
   // If no structured sections found, fall back to plain display
   if (sections.length === 0) {
     return (
-      <div className="text-stone-700 leading-loose text-lg space-y-6"
+      <div className="text-white/85 leading-loose text-lg space-y-6"
         dangerouslySetInnerHTML={{ __html: notes }}
       />
     )
@@ -385,7 +385,7 @@ function TastingNotesDisplay({ notes }: { notes: string }) {
     <div className="space-y-8">
       {/* Intro paragraph */}
       {introContent && (
-        <p className="text-stone-600 text-lg leading-loose italic border-l-4 border-burgundy-200 pl-6">
+        <p className="text-white/70 text-lg leading-loose italic border-l-4 border-white/30 pl-6">
           {introContent}
         </p>
       )}
@@ -395,15 +395,15 @@ function TastingNotesDisplay({ notes }: { notes: string }) {
         {sections.map((section) => (
           <div
             key={section.type}
-            className="bg-gradient-to-br from-stone-50 to-stone-100/50 border border-stone-200 rounded-2xl p-6 lg:p-8"
+            className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 lg:p-8"
           >
             <div className="flex items-center gap-3 mb-4">
               <span className="text-2xl">{section.icon}</span>
-              <h3 className="text-lg font-bold text-stone-900 uppercase tracking-wider">
+              <h3 className="text-lg font-bold text-white uppercase tracking-wider">
                 {section.label}
               </h3>
             </div>
-            <p className="text-stone-700 leading-loose text-[15px]">
+            <p className="text-white/85 leading-loose text-[15px]">
               {section.content}
             </p>
           </div>
@@ -747,11 +747,21 @@ export default async function WineDetailPage({ params }: Props) {
 
           {/* Tasting Notes (H2 with wine name - Mention 4) */}
           {wine.tasting_notes && (
-            <section className="mt-14" aria-labelledby="tasting-heading">
-              <h2 id="tasting-heading" className="text-2xl font-bold text-stone-900 mb-8">
-                {seoKeyword} Tasting Notes
-              </h2>
-              <TastingNotesDisplay notes={wine.tasting_notes} />
+            <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="tasting-heading">
+              <div className="relative min-h-[400px]">
+                <img
+                  src="https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=1200&q=80"
+                  alt={`Wine tasting notes for ${seoKeyword}`}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black/80" />
+                <div className="relative py-12 px-8 md:px-12">
+                  <h2 id="tasting-heading" className="text-3xl font-light text-white tracking-tight mb-8">
+                    {seoKeyword} Tasting Notes
+                  </h2>
+                  <TastingNotesDisplay notes={wine.tasting_notes} />
+                </div>
+              </div>
             </section>
           )}
 
@@ -788,105 +798,135 @@ export default async function WineDetailPage({ params }: Props) {
           {/* Skyscraper Enrichment Sections (for priority wines) */}
           {enrichment && (
             <>
-              {/* Why This Wine Is Special */}
-              <section className="mt-14" aria-labelledby="special-heading">
-                <h2 id="special-heading" className="text-2xl font-bold text-stone-900 mb-4">
-                  Why {seoKeyword} Is Special
-                </h2>
-                <div className="grid md:grid-cols-2 gap-8 items-start">
-                  <ul className="space-y-3">
-                    {enrichment.whySpecial.map((point, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <span className="w-2 h-2 rounded-full bg-burgundy-500 flex-shrink-0 mt-2" />
-                        <span className="text-stone-700">{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-                    <img
-                      src={enrichment.heroImage}
-                      alt={enrichment.heroAlt}
-                      className="w-full h-full object-cover"
-                    />
+              {/* Why This Wine Is Special - Hero Banner */}
+              <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="special-heading">
+                <div className="relative min-h-[450px]">
+                  <img
+                    src={enrichment.heroImage}
+                    alt={enrichment.heroAlt}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
+                  <div className="relative py-14 px-8 md:px-12 max-w-2xl">
+                    <h2 id="special-heading" className="text-3xl font-light text-white tracking-tight mb-8">
+                      Why {seoKeyword} Is Special
+                    </h2>
+                    <ul className="space-y-4">
+                      {enrichment.whySpecial.map((point, i) => (
+                        <li key={i} className="flex items-start gap-4">
+                          <span className="w-2 h-2 rounded-full bg-white/70 flex-shrink-0 mt-2" />
+                          <span className="text-white/90 leading-relaxed">{point}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </section>
 
-              {/* Producer Profile */}
-              <section className="mt-14 bg-stone-50 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="producer-heading">
-                <h2 id="producer-heading" className="text-2xl font-bold text-stone-900 mb-4">
-                  About {enrichment.producerProfile.name}
-                </h2>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="md:col-span-2 space-y-4">
-                    <p className="text-stone-700 leading-loose">{enrichment.producerProfile.history}</p>
-                    <p className="text-stone-700 leading-loose"><strong>Philosophy:</strong> {enrichment.producerProfile.philosophy}</p>
-                  </div>
-                  <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-                    <img
-                      src={enrichment.producerProfile.image}
-                      alt={enrichment.producerProfile.imageAlt}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* Vintage Analysis */}
-              <section className="mt-16" aria-labelledby="vintage-heading">
-                <h2 id="vintage-heading" className="text-2xl font-bold text-stone-900 mb-6">
-                  {seoKeyword}: Vintage Analysis
-                </h2>
-                <div className="bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-xl p-8">
-                  <div className="space-y-4">
-                    {enrichment.vintageAnalysis.split('. ').reduce((acc: string[], sentence, i, arr) => {
-                      const chunkSize = Math.ceil(arr.length / 2)
-                      const chunkIndex = Math.floor(i / chunkSize)
-                      if (!acc[chunkIndex]) acc[chunkIndex] = ''
-                      acc[chunkIndex] += sentence + (i < arr.length - 1 ? '. ' : '')
-                      return acc
-                    }, []).map((para, i) => (
-                      <p key={i} className="text-stone-700 leading-loose text-lg">{para}</p>
-                    ))}
+              {/* Producer Profile - Hero Banner */}
+              <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="producer-heading">
+                <div className="relative min-h-[400px]">
+                  <img
+                    src={enrichment.producerProfile.image}
+                    alt={enrichment.producerProfile.imageAlt}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/20" />
+                  <div className="relative py-14 px-8 md:px-12 flex flex-col justify-end min-h-[400px]">
+                    <h2 id="producer-heading" className="text-3xl font-light text-white tracking-tight mb-6">
+                      About {enrichment.producerProfile.name}
+                    </h2>
+                    <div className="space-y-4 max-w-3xl">
+                      <p className="text-white/85 leading-loose">{enrichment.producerProfile.history}</p>
+                      <p className="text-white/80 leading-loose"><span className="text-white font-medium">Philosophy:</span> {enrichment.producerProfile.philosophy}</p>
+                    </div>
                   </div>
                 </div>
               </section>
 
-              {/* Critical Acclaim */}
+              {/* Vintage Analysis - Hero Banner */}
+              <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="vintage-heading">
+                <div className="relative min-h-[350px]">
+                  <img
+                    src="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1200&q=80"
+                    alt={`Vineyard harvest - vintage analysis for ${seoKeyword}`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/65 to-black/40" />
+                  <div className="relative py-12 px-8 md:px-12 max-w-3xl">
+                    <h2 id="vintage-heading" className="text-3xl font-light text-white tracking-tight mb-8">
+                      {seoKeyword}: Vintage Analysis
+                    </h2>
+                    <div className="space-y-4">
+                      {enrichment.vintageAnalysis.split('. ').reduce((acc: string[], sentence, i, arr) => {
+                        const chunkSize = Math.ceil(arr.length / 2)
+                        const chunkIndex = Math.floor(i / chunkSize)
+                        if (!acc[chunkIndex]) acc[chunkIndex] = ''
+                        acc[chunkIndex] += sentence + (i < arr.length - 1 ? '. ' : '')
+                        return acc
+                      }, []).map((para, i) => (
+                        <p key={i} className="text-white/85 leading-loose text-base">{para}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Critical Acclaim - Hero Banner */}
               {enrichment.criticalAcclaim.length > 0 && (
-                <section className="mt-14" aria-labelledby="acclaim-heading">
-                  <h2 id="acclaim-heading" className="text-2xl font-bold text-stone-900 mb-4">
-                    {seoKeyword} Critical Acclaim
-                  </h2>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {enrichment.criticalAcclaim.map((review, i) => (
-                      <div key={i} className="bg-stone-50 border border-stone-200 rounded-xl p-5">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium text-stone-600">{review.source}</span>
-                          <span className="px-2 py-1 bg-burgundy-100 text-burgundy-700 text-sm font-bold rounded">{review.score}</span>
-                        </div>
-                        <p className="text-stone-700 text-sm italic">&ldquo;{review.quote}&rdquo;</p>
+                <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="acclaim-heading">
+                  <div className="relative min-h-[400px]">
+                    <img
+                      src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1200&q=80"
+                      alt={`Wine tasting - critical acclaim for ${seoKeyword}`}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/70" />
+                    <div className="relative py-12 px-8 md:px-12">
+                      <h2 id="acclaim-heading" className="text-3xl font-light text-white tracking-tight mb-8">
+                        {seoKeyword} Critical Acclaim
+                      </h2>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {enrichment.criticalAcclaim.map((review, i) => (
+                          <div key={i} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-sm font-medium text-white/70">{review.source}</span>
+                              <span className="px-2 py-1 bg-white/20 text-white text-sm font-bold rounded">{review.score}</span>
+                            </div>
+                            <p className="text-white/80 text-sm italic">&ldquo;{review.quote}&rdquo;</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </section>
               )}
 
-              {/* Context Section (unique deep-dive content) */}
-              <section className="mt-16" aria-labelledby="context-heading">
-                <h2 id="context-heading" className="text-2xl font-bold text-stone-900 mb-6">
-                  {enrichment.contextSection.title}
-                </h2>
-                <div className="space-y-5">
-                  {enrichment.contextSection.content.split('. ').reduce((acc: string[], sentence, i, arr) => {
-                    const chunkSize = Math.ceil(arr.length / 3)
-                    const chunkIndex = Math.floor(i / chunkSize)
-                    if (!acc[chunkIndex]) acc[chunkIndex] = ''
-                    acc[chunkIndex] += sentence + (i < arr.length - 1 ? '. ' : '')
-                    return acc
-                  }, []).map((para, i) => (
-                    <p key={i} className="text-stone-700 leading-loose text-lg">{para}</p>
-                  ))}
+              {/* Context Section - Hero Banner */}
+              <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="context-heading">
+                <div className="relative min-h-[400px]">
+                  <img
+                    src="https://images.unsplash.com/photo-1474722883778-792e7990302f?w=1200&q=80"
+                    alt={`Wine history - ${enrichment.contextSection.title}`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/50" />
+                  <div className="relative py-14 px-8 md:px-12 max-w-3xl">
+                    <h2 id="context-heading" className="text-3xl font-light text-white tracking-tight mb-8">
+                      {enrichment.contextSection.title}
+                    </h2>
+                    <div className="space-y-5">
+                      {enrichment.contextSection.content.split('. ').reduce((acc: string[], sentence, i, arr) => {
+                        const chunkSize = Math.ceil(arr.length / 3)
+                        const chunkIndex = Math.floor(i / chunkSize)
+                        if (!acc[chunkIndex]) acc[chunkIndex] = ''
+                        acc[chunkIndex] += sentence + (i < arr.length - 1 ? '. ' : '')
+                        return acc
+                      }, []).map((para, i) => (
+                        <p key={i} className="text-white/85 leading-loose text-base">{para}</p>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </section>
 
