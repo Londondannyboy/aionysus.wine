@@ -76,6 +76,11 @@ export default function RootLayout({
             </nav>
           </header>
           <div className="pt-14">
+            <div className="bg-amber-50 border-b border-amber-200 py-1.5 px-4 text-center">
+              <p className="text-xs text-amber-800">
+                <strong>Beta Platform</strong> — Aionysus is in development. Investment data is illustrative only. Not financial advice.
+              </p>
+            </div>
             <Providers>
               <GlobalVicSidebar>
                 {children}

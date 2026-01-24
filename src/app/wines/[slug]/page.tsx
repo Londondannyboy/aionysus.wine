@@ -569,15 +569,6 @@ export default async function WineDetailPage({ params }: Props) {
           </div>
         )}
 
-        {/* Header Bar */}
-        <div className="bg-stone-50 border-b border-stone-200 py-2">
-          <div className="max-w-6xl mx-auto px-6">
-            <p className="text-stone-500 text-sm text-center">
-              <strong>Beta Platform</strong> — Wine purchases coming soon. Chat with Vic, our AI sommelier.
-            </p>
-          </div>
-        </div>
-
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Breadcrumb */}
         <nav className="mb-6" aria-label="Breadcrumb">

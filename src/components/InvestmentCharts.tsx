@@ -294,9 +294,22 @@ export function InvestmentCharts({
         </div>
       </div>
 
-      <p className="text-xs text-stone-400 text-center">
-        Investment data is illustrative. Past performance does not guarantee future results. Wine should represent 5-15% of a diversified portfolio.
-      </p>
+      {/* Beta Disclaimer */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <span className="text-amber-600 text-lg flex-shrink-0">⚠</span>
+          <div>
+            <h4 className="text-sm font-semibold text-amber-900 mb-1">Beta — Not Financial Advice</h4>
+            <p className="text-xs text-amber-800 leading-relaxed">
+              This investment data is <strong>illustrative and seeded for demonstration purposes only</strong>.
+              Aionysus is in beta and does not provide financial, investment, or tax advice.
+              Past performance does not guarantee future results.
+              Always consult a qualified financial advisor before making investment decisions.
+              Wine should represent 5–15% of a diversified portfolio at most.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
