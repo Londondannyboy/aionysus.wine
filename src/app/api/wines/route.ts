@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllWines, searchWines, getWineBySlug } from '@/lib/wine-db'
+import { getAllWines, searchWines, getWineBySlug, getWineInvestmentData } from '@/lib/wine-db'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,6 +15,17 @@ export async function GET(request: NextRequest) {
     const vintage = searchParams.get('vintage')
     const slug = searchParams.get('slug')
     const limit = searchParams.get('limit')
+    const investment = searchParams.get('investment')
+    const id = searchParams.get('id')
+
+    // Investment data for a specific wine
+    if (investment === 'true' && id) {
+      const invData = await getWineInvestmentData(parseInt(id))
+      if (!invData) {
+        return NextResponse.json({ error: 'No investment data found' }, { status: 404 })
+      }
+      return NextResponse.json(invData)
+    }
 
     // Single wine by slug
     if (slug) {

@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useFrontendTool, useCopilotReadable } from '@copilotkit/react-core'
 import { usePathname } from 'next/navigation'
+import { WineCardChat, WineCardChatLoading } from './WineCardChat'
+import { InvestmentChartChat, InvestmentChartChatLoading } from './InvestmentChartChat'
 
 interface Wine {
   id: number
@@ -461,6 +463,166 @@ export function GlobalCopilotActions({ currentWine }: GlobalCopilotActionsProps)
         success: true,
         message: 'Taking you to the wine page...',
         url,
+      }
+    },
+  })
+
+  // ============ GENERATIVE UI ACTIONS ============
+  // These render React components directly in the chat sidebar
+
+  // Action: Show wine card with add-to-cart (Generative UI)
+  useFrontendTool({
+    name: 'show_wine_card',
+    description: 'Show a visual wine card in the chat with image, details, and add-to-cart button. Use this when recommending a specific wine to make it easy for the user to see and buy it.',
+    parameters: [
+      { name: 'slug', type: 'string', description: 'Wine slug to display', required: true },
+    ],
+    render: (props: any) => {
+      if (props.status === 'executing') {
+        return <WineCardChatLoading />
+      }
+      if (props.status === 'complete' && props.result?.wine) {
+        const wine = props.result.wine as {
+          name: string; slug: string; winery: string; region: string; country: string;
+          vintage: number | null; price_retail: number | null; image_url: string | null;
+          shopify_product_id: string | null; grape_variety?: string | null;
+        }
+        return (
+          <WineCardChat
+            wine={wine}
+            onAddToCart={async (slug) => {
+              try {
+                const cid = await getOrCreateCart()
+                if (!cid) return
+                const wineRes = await fetch(`/api/wines?slug=${slug}`)
+                const wineData = await wineRes.json()
+                if (wineData?.shopify_product_id) {
+                  const cartRes = await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cartId: cid, productId: wineData.shopify_product_id, quantity: 1 }),
+                  })
+                  const cart = await cartRes.json()
+                  if (cart.totalQuantity) setCartCount(cart.totalQuantity)
+                  alert(`Added ${wineData.name} to cart!`)
+                }
+              } catch (e) {
+                console.error('Add to cart from card:', e)
+              }
+            }}
+          />
+        )
+      }
+      return <></>
+    },
+    handler: async ({ slug }) => {
+      try {
+        const res = await fetch(`/api/wines?slug=${slug}`)
+        const wine = await res.json()
+        if (!wine || wine.error || !wine.id) {
+          return { success: false, error: 'Wine not found' }
+        }
+        return {
+          success: true,
+          wine: {
+            name: wine.name,
+            slug: wine.slug,
+            winery: wine.winery,
+            region: wine.region,
+            country: wine.country,
+            vintage: wine.vintage,
+            price_retail: wine.price_retail,
+            image_url: wine.image_url,
+            shopify_product_id: wine.shopify_product_id,
+            grape_variety: wine.grape_variety,
+          },
+        }
+      } catch {
+        return { success: false, error: 'Failed to fetch wine' }
+      }
+    },
+  })
+
+  // Action: Show investment analysis chart (Generative UI)
+  useFrontendTool({
+    name: 'show_wine_investment',
+    description: 'Show an investment performance chart in the chat for a specific wine. Displays price history, annual returns, rating, and benchmark comparison. Use when user asks about wine investment, performance, or returns.',
+    parameters: [
+      { name: 'slug', type: 'string', description: 'Wine slug to analyse', required: true },
+    ],
+    render: (props: any) => {
+      if (props.status === 'executing') {
+        return <InvestmentChartChatLoading />
+      }
+      if (props.status === 'complete' && props.result?.investment) {
+        const inv = props.result.investment as {
+          wineName: string
+          prices: { year: string; price: number | null }[]
+          annualReturn: number | null
+          volatility: number | null
+          liquidity: number | null
+          projectedReturn: number | null
+          rating: string | null
+          recommendation: string | null
+        }
+        return (
+          <InvestmentChartChat
+            wineName={inv.wineName}
+            prices={inv.prices}
+            annualReturn={inv.annualReturn}
+            volatility={inv.volatility}
+            liquidity={inv.liquidity}
+            projectedReturn={inv.projectedReturn}
+            rating={inv.rating}
+            recommendation={inv.recommendation}
+          />
+        )
+      }
+      return <></>
+    },
+    handler: async ({ slug }) => {
+      try {
+        // First get the wine to find its ID
+        const wineRes = await fetch(`/api/wines?slug=${slug}`)
+        const wine = await wineRes.json()
+        if (!wine || wine.error || !wine.id) {
+          return { success: false, error: 'Wine not found' }
+        }
+
+        // Then fetch investment data
+        const invRes = await fetch(`/api/wines?investment=true&id=${wine.id}`)
+        const invData = await invRes.json()
+
+        if (!invData || invData.error) {
+          return {
+            success: false,
+            error: 'No investment data available for this wine',
+            message: `Investment data is not yet available for ${wine.name}. We're building our investment database — check back soon!`,
+          }
+        }
+
+        return {
+          success: true,
+          investment: {
+            wineName: `${wine.vintage || ''} ${wine.name}`.trim(),
+            prices: [
+              { year: '2020', price: invData.price_2020 },
+              { year: '2021', price: invData.price_2021 },
+              { year: '2022', price: invData.price_2022 },
+              { year: '2023', price: invData.price_2023 },
+              { year: '2024', price: invData.price_2024 },
+              { year: '2025', price: invData.price_2025 },
+            ],
+            annualReturn: invData.annual_return_pct,
+            volatility: invData.volatility_score,
+            liquidity: invData.liquidity_score,
+            projectedReturn: invData.projected_5yr_return,
+            rating: invData.investment_rating,
+            recommendation: invData.analyst_recommendation,
+          },
+        }
+      } catch {
+        return { success: false, error: 'Failed to fetch investment data' }
       }
     },
   })
