@@ -29,6 +29,11 @@ const REGION_QUERIES: Record<string, string> = {
   'marlborough': 'marlborough vineyard new zealand',
   'barossa': 'barossa valley vineyard australia',
 
+  // Portuguese regions
+  'madeira': 'madeira island portugal ocean cliffs vineyards',
+  'douro': 'douro valley portugal vineyard terraces',
+  'portugal': 'portugal vineyard douro valley',
+
   // UK - English wine (Vik's favourite!)
   'england': 'english vineyard sussex',
   'sussex': 'sussex vineyard england',

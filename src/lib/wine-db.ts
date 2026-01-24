@@ -30,6 +30,8 @@ export interface Wine {
   original_url: string | null
   aionysus_url: string | null
   shopify_product_id: string | null
+  image_credit: string | null
+  image_credit_url: string | null
 }
 
 export interface WineSearchParams {
@@ -52,7 +54,8 @@ export async function getAllWines(limit: number = 100): Promise<Wine[]> {
     SELECT id, name, slug, winery, region, country, grape_variety,
            vintage, wine_type, style, color, price_retail, price_trade,
            bottle_size, tasting_notes, image_url, stock_quantity,
-           case_size, classification, original_url, aionysus_url, shopify_product_id
+           case_size, classification, original_url, aionysus_url, shopify_product_id,
+           image_credit, image_credit_url
     FROM wines
     WHERE is_active = true
     ORDER BY name ASC
@@ -69,7 +72,8 @@ export async function getWineBySlug(slug: string): Promise<Wine | null> {
     SELECT id, name, slug, winery, region, country, grape_variety,
            vintage, wine_type, style, color, price_retail, price_trade,
            bottle_size, tasting_notes, image_url, stock_quantity,
-           case_size, classification, original_url, aionysus_url, shopify_product_id
+           case_size, classification, original_url, aionysus_url, shopify_product_id,
+           image_credit, image_credit_url
     FROM wines
     WHERE slug = ${slug} AND is_active = true
     LIMIT 1
@@ -85,7 +89,8 @@ export async function getWineById(id: number): Promise<Wine | null> {
     SELECT id, name, slug, winery, region, country, grape_variety,
            vintage, wine_type, style, color, price_retail, price_trade,
            bottle_size, tasting_notes, image_url, stock_quantity,
-           case_size, classification, original_url, aionysus_url, shopify_product_id
+           case_size, classification, original_url, aionysus_url, shopify_product_id,
+           image_credit, image_credit_url
     FROM wines
     WHERE id = ${id} AND is_active = true
     LIMIT 1
@@ -114,7 +119,8 @@ export async function searchWines(params: WineSearchParams): Promise<Wine[]> {
     SELECT id, name, slug, winery, region, country, grape_variety,
            vintage, wine_type, style, color, price_retail, price_trade,
            bottle_size, tasting_notes, image_url, stock_quantity,
-           case_size, classification, original_url, aionysus_url, shopify_product_id
+           case_size, classification, original_url, aionysus_url, shopify_product_id,
+           image_credit, image_credit_url
     FROM wines
     WHERE is_active = true
     ORDER BY price_retail ASC NULLS LAST
@@ -351,7 +357,8 @@ export async function getWinesByAppellation(appellation: string, limit: number =
     SELECT id, name, slug, winery, region, country, grape_variety,
            vintage, wine_type, style, color, price_retail, price_trade,
            bottle_size, tasting_notes, image_url, stock_quantity,
-           case_size, classification, original_url, aionysus_url, shopify_product_id
+           case_size, classification, original_url, aionysus_url, shopify_product_id,
+           image_credit, image_credit_url
     FROM wines
     WHERE region ILIKE ${'%' + appellation + '%'} AND is_active = true
     ORDER BY vintage DESC NULLS LAST, price_retail DESC NULLS LAST

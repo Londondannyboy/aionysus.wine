@@ -33,13 +33,30 @@ export interface WineEnrichment {
   additionalFoodPairings: string[]
   collectorsNotes: string
   externalLinks: { name: string; url: string; description: string }[]
+  seo?: {
+    title: string
+    h1: string
+    metaDescription: string
+    imageAlt: string
+    bodyKeyword: string
+  }
+  regionImages?: {
+    hero: string
+    mid: string
+    footer: string
+  }
+  regionTravel?: {
+    title: string
+    intro: string
+    highlights: string[]
+  }
 }
 
 export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
-  '1875-boal-h-m-borges': {
-    slug: '1875-boal-h-m-borges',
+  'boal-borges-1875': {
+    slug: 'boal-borges-1875',
     heroImage: 'https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?w=800&q=80',
-    heroAlt: '1875 Boal H.M. Borges Madeira wine - one of the oldest wines in the world from the historic island of Madeira',
+    heroAlt: 'Boal Borges 1875 Madeira wine - one of the oldest wines in the world from the historic island of Madeira',
     producerProfile: {
       name: 'H.M. Borges',
       history: 'H.M. Borges is one of the most historic wine houses on the island of Madeira, founded in 1877 by Henrique Menezes Borges. The house has been family-owned for over 145 years, maintaining the traditional canteiro ageing method that makes Madeira among the most long-lived wines on earth. Their cellars in Funchal contain wines dating back to the early 19th century, including this extraordinary 1875 Boal — a wine that predates the founding of the company itself, acquired from older reserves.',
@@ -55,7 +72,7 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
       'A living piece of viticultural history that predates automobiles, electricity, and the telephone',
       'The canteiro ageing method gives Madeira its unique caramelised, smoky character',
     ],
-    vintageAnalysis: 'The 1875 vintage on Madeira preceded the phylloxera epidemic that devastated the island\'s vineyards in the 1880s. Wines from this era are made from ungrafted vines — the original pre-phylloxera rootstock — which many believe produced wines of even greater concentration and complexity than modern plantings. The year 1875 saw favourable growing conditions on Madeira, with warm temperatures and moderate rainfall producing grapes of exceptional ripeness and concentration. After over 145 years of canteiro ageing, this Boal has achieved a level of complexity that is almost impossible to describe — each sip reveals new layers of flavour that have been building for over a century and a half.',
+    vintageAnalysis: 'The 1875 vintage on Madeira preceded the phylloxera epidemic that devastated the island\'s vineyards in the 1880s. Wines from this era are made from ungrafted vines — the original pre-phylloxera rootstock — which many believe produced wines of even greater concentration and complexity than modern plantings. The year 1875 saw favourable growing conditions on Madeira, with warm temperatures and moderate rainfall producing grapes of exceptional ripeness and concentration. After over 145 years of canteiro ageing, Boal Borges 1875 has achieved a level of complexity that is almost impossible to describe — each sip reveals new layers of flavour that have been building for over a century and a half.',
     cellaring: {
       temperature: '12-18°C (Madeira is extremely resilient to temperature variation)',
       humidity: '60-70% (less critical than for table wines due to oxidative style)',
@@ -69,17 +86,39 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
       { source: 'Jancis Robinson MW', score: '19/20', quote: 'Great aged Madeira is arguably the most extraordinary wine experience available to collectors.' },
     ],
     contextSection: {
-      title: 'Understanding Pre-Phylloxera Madeira Wine',
-      content: 'The 1875 Boal H.M. Borges belongs to a vanishingly rare category of wines: pre-phylloxera Madeira. Phylloxera — a vine-killing insect from North America — devastated Madeira\'s vineyards between 1852 and 1885. While many vineyards were destroyed earlier, the remoter plantings survived into the mid-1870s, producing wines from ancient, ungrafted vines. These pre-phylloxera wines are prized for their extraordinary concentration, as the original European rootstock produced smaller berries with more intense flavours. Today, fewer than a hundred casks of pre-phylloxera Madeira remain in existence, making each bottle a genuine museum piece — yet one that is still vibrantly alive and drinking superbly.',
+      title: 'Understanding Boal Borges 1875: Pre-Phylloxera Madeira',
+      content: 'Boal Borges 1875 belongs to a vanishingly rare category of wines: pre-phylloxera Madeira. Phylloxera — a vine-killing insect from North America — devastated Madeira\'s vineyards between 1852 and 1885. While many vineyards were destroyed earlier, the remoter plantings survived into the mid-1870s, producing wines from ancient, ungrafted vines. These pre-phylloxera wines are prized for their extraordinary concentration, as the original European rootstock produced smaller berries with more intense flavours. Today, fewer than a hundred casks of pre-phylloxera Madeira remain in existence, making each bottle of Boal Borges 1875 a genuine museum piece — yet one that is still vibrantly alive and drinking superbly.',
     },
     additionalFoodPairings: ['Crème caramel', 'Pecan pie', 'Aged Mimolette cheese', 'Cigar accompaniment', 'Roasted chestnuts', 'Dark chocolate truffles with sea salt', 'Blue Stilton', 'Foie gras terrine'],
-    collectorsNotes: 'The 1875 Boal H.M. Borges is an extraordinary collector\'s wine. Pre-phylloxera Madeira from the 1800s represents one of the most secure wine investments, as the wine is essentially indestructible and the supply can only diminish over time. Provenance is key — ensure bottles come directly from the Borges lodge in Funchal or from reputable auction houses. Authentication can be verified through H.M. Borges directly. This wine makes an exceptional birth-year gift, anniversary celebration, or legacy cellar centrepiece.',
+    collectorsNotes: 'Boal Borges 1875 is an extraordinary collector\'s wine. Pre-phylloxera Madeira from the 1800s represents one of the most secure wine investments, as the wine is essentially indestructible and the supply can only diminish over time. Provenance is key — ensure bottles of Boal Borges 1875 come directly from the Borges lodge in Funchal or from reputable auction houses. Authentication can be verified through H.M. Borges directly. This wine makes an exceptional birth-year gift, anniversary celebration, or legacy cellar centrepiece.',
     externalLinks: [
       { name: 'H.M. Borges Official', url: 'https://www.hmborges.com', description: 'Official producer website with history and collection' },
       { name: 'Madeira Wine Institute (IVBAM)', url: 'https://www.ivbam.gov-madeira.pt', description: 'Official Madeira DOC regulatory body' },
       { name: 'Visit Madeira', url: 'https://www.visitmadeira.pt', description: 'Tourism and wine route information' },
       { name: 'Wine-Searcher: Boal Madeira', url: 'https://www.wine-searcher.com/grape-1628-boal', description: 'Market prices and availability worldwide' },
     ],
+    seo: {
+      title: 'Boal Borges 1875 - Vintage Madeira Wine | Aionysus',
+      h1: 'Boal Borges 1875 Madeira',
+      metaDescription: 'Boal Borges 1875 — buy this rare pre-phylloxera H.M. Borges Madeira wine. Over 145 years old, one of the oldest commercially available wines. Expert tasting notes, investment analysis & food pairings.',
+      imageAlt: 'Boal Borges 1875 wine bottle - rare pre-phylloxera H.M. Borges vintage Madeira',
+      bodyKeyword: 'Boal Borges 1875',
+    },
+    regionImages: {
+      hero: 'https://images.unsplash.com/photo-1722607784426-74d7887bde05?w=1920&q=80&fit=crop',
+      mid: 'https://images.unsplash.com/photo-1628413283166-a7666966d26b?w=1920&q=80&fit=crop',
+      footer: 'https://images.unsplash.com/photo-1722608194896-1bce8c325480?w=1920&q=80&fit=crop',
+    },
+    regionTravel: {
+      title: 'Discover Madeira: The Island of Eternal Wine',
+      intro: 'Rising from the Atlantic Ocean 600km off the African coast, Madeira is a volcanic paradise where wine has been produced for over 500 years. The island\'s unique canteiro ageing method and subtropical climate create wines of Boal Borges 1875 calibre that are virtually immortal — no other wine region on earth can claim bottles from the 1700s that still drink beautifully today. Visiting the historic wine lodges of Funchal is a pilgrimage for anyone who appreciates Boal Borges 1875 and the extraordinary tradition behind it.',
+      highlights: [
+        'Tour the historic wine lodges of Funchal where Boal Borges 1875 was aged',
+        'Walk the levadas through ancient laurel forests',
+        'Visit Câmara de Lobos, the fishing village that inspired Churchill',
+        'Taste vintages spanning three centuries in a single sitting',
+      ],
+    },
   },
 
   '2011-ch-petrus-pomerol': {
