@@ -450,6 +450,72 @@ function SimilarWinesSection({ wines, currentRegion, wineName }: { wines: Wine[]
   )
 }
 
+/**
+ * Tasting Notes Display Component
+ * Parses HTML tasting notes and renders them as a beautiful styled component
+ * with Nose, Palate, and Finish sections with icons
+ */
+function TastingNotesDisplay({ notes }: { notes: string }) {
+  // Parse the HTML into sections
+  const sections: { type: string; icon: string; label: string; content: string }[] = []
+  let introContent = ''
+
+  // Extract Nose, Palate, Finish sections from HTML
+  const noseMatch = notes.match(/<strong>Nose:<\/strong>\s*([\s\S]*?)(?=<\/p>|<strong>)/i)
+  const palateMatch = notes.match(/<strong>Palate:<\/strong>\s*([\s\S]*?)(?=<\/p>|<strong>)/i)
+  const finishMatch = notes.match(/<strong>Finish:<\/strong>\s*([\s\S]*?)(?=<\/p>|$)/i)
+
+  // Extract intro (everything before first <strong>)
+  const introMatch = notes.match(/^<p>([\s\S]*?)(?=<strong>|<\/p>)/i)
+  if (introMatch) {
+    introContent = introMatch[1].replace(/<[^>]+>/g, '').trim()
+  }
+
+  if (noseMatch) sections.push({ type: 'nose', icon: '👃', label: 'Nose', content: noseMatch[1].replace(/<[^>]+>/g, '').trim() })
+  if (palateMatch) sections.push({ type: 'palate', icon: '👅', label: 'Palate', content: palateMatch[1].replace(/<[^>]+>/g, '').trim() })
+  if (finishMatch) sections.push({ type: 'finish', icon: '✨', label: 'Finish', content: finishMatch[1].replace(/<[^>]+>/g, '').trim() })
+
+  // If no structured sections found, fall back to plain display
+  if (sections.length === 0) {
+    return (
+      <div className="text-stone-700 leading-loose text-lg space-y-6"
+        dangerouslySetInnerHTML={{ __html: notes }}
+      />
+    )
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Intro paragraph */}
+      {introContent && (
+        <p className="text-stone-600 text-lg leading-loose italic border-l-4 border-burgundy-200 pl-6">
+          {introContent}
+        </p>
+      )}
+
+      {/* Tasting sections grid */}
+      <div className="grid md:grid-cols-3 gap-6">
+        {sections.map((section) => (
+          <div
+            key={section.type}
+            className="bg-gradient-to-br from-stone-50 to-stone-100/50 border border-stone-200 rounded-2xl p-6 lg:p-8"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-2xl">{section.icon}</span>
+              <h3 className="text-lg font-bold text-stone-900 uppercase tracking-wider">
+                {section.label}
+              </h3>
+            </div>
+            <p className="text-stone-700 leading-loose text-[15px]">
+              {section.content}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default async function WineDetailPage({ params }: Props) {
   const { slug } = await params
   const wine = await getWineBySlug(slug)
@@ -670,13 +736,15 @@ export default async function WineDetailPage({ params }: Props) {
               </div>
 
               {/* Wine Description (SEO - Mention 2 with bold) */}
-              <p className="text-stone-700 mb-6 text-lg leading-relaxed" itemProp="description">
-                <strong className="text-stone-900">{seoKeyword}</strong> is an exceptional wine from {wine.winery},
-                crafted in the prestigious {wine.region} region of {wine.country}.
-                {wine.classification && ` Classified as ${wine.classification},`}
-                {wine.grape_variety && ` this ${wine.grape_variety} wine`} represents outstanding winemaking tradition
-                and is highly sought after by collectors and investors.
-              </p>
+              <div className="mb-8 space-y-4" itemProp="description">
+                <p className="text-stone-700 text-lg leading-loose">
+                  <strong className="text-stone-900">{seoKeyword}</strong> is an exceptional wine from {wine.winery}, crafted in the prestigious {wine.region} region of {wine.country}.
+                </p>
+                <p className="text-stone-700 text-lg leading-loose">
+                  {wine.classification && `Classified as ${wine.classification}, `}
+                  {wine.grape_variety ? `this ${wine.grape_variety} wine` : 'This wine'} represents outstanding winemaking tradition and is highly sought after by collectors and investors.
+                </p>
+              </div>
 
               {/* Quick Facts Grid */}
               <div className="grid grid-cols-2 gap-4 mb-6">
@@ -736,11 +804,11 @@ export default async function WineDetailPage({ params }: Props) {
           </div>
 
           {/* Food Pairings Section (H2 with wine name - Mention 3) */}
-          <section className="mt-10" aria-labelledby="pairings-heading">
-            <h2 id="pairings-heading" className="text-2xl font-bold text-stone-900 mb-4">
+          <section className="mt-14" aria-labelledby="pairings-heading">
+            <h2 id="pairings-heading" className="text-2xl font-bold text-stone-900 mb-6">
               Food Pairings for {seoKeyword}
             </h2>
-            <p className="text-stone-700 mb-4">
+            <p className="text-stone-700 mb-6 text-lg leading-loose">
               {seoKeyword} pairs beautifully with a variety of dishes. Here are our recommended pairings:
             </p>
             <div className="flex flex-wrap gap-3">
@@ -754,43 +822,39 @@ export default async function WineDetailPage({ params }: Props) {
 
           {/* Tasting Notes (H2 with wine name - Mention 4) */}
           {wine.tasting_notes && (
-            <section className="mt-10" aria-labelledby="tasting-heading">
-              <h2 id="tasting-heading" className="text-2xl font-bold text-stone-900 mb-4">
+            <section className="mt-14" aria-labelledby="tasting-heading">
+              <h2 id="tasting-heading" className="text-2xl font-bold text-stone-900 mb-8">
                 {seoKeyword} Tasting Notes
               </h2>
-              <div className="prose prose-stone max-w-none text-stone-700"
-                dangerouslySetInnerHTML={{ __html: wine.tasting_notes }}
-              />
+              <TastingNotesDisplay notes={wine.tasting_notes} />
             </section>
           )}
 
           {/* Region Travel Section (for enriched wines with travel content) */}
           {enrichment?.regionTravel && enrichment?.regionImages && (
             <section className="mt-16 -mx-6 relative overflow-hidden" aria-labelledby="region-travel-heading">
-              <div className="relative aspect-[21/9] lg:aspect-[3/1]">
+              <div className="relative min-h-[500px] lg:min-h-[600px]">
                 <img
                   src={enrichment.regionImages.mid}
                   alt={`${wine.region}, ${wine.country} - home of ${seoKeyword}`}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
-                <div className="absolute inset-0 flex items-center">
-                  <div className="max-w-3xl px-8 lg:px-16">
-                    <h2 id="region-travel-heading" className="text-3xl lg:text-5xl font-light text-white tracking-tight mb-4">
-                      {enrichment.regionTravel.title}
-                    </h2>
-                    <p className="text-white/85 text-base lg:text-lg leading-relaxed mb-6 max-w-2xl">
-                      {enrichment.regionTravel.intro}
-                    </p>
-                    <ul className="space-y-2">
-                      {enrichment.regionTravel.highlights.map((highlight, i) => (
-                        <li key={i} className="text-white/75 text-sm lg:text-base flex items-center gap-3">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white/60 flex-shrink-0" />
-                          {highlight}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/60 to-black/40" />
+                <div className="relative py-16 lg:py-24 px-8 lg:px-16 max-w-3xl">
+                  <h2 id="region-travel-heading" className="text-3xl lg:text-5xl font-light text-white tracking-tight mb-8">
+                    {enrichment.regionTravel.title}
+                  </h2>
+                  <p className="text-white/90 text-base lg:text-lg leading-loose mb-10 max-w-2xl">
+                    {enrichment.regionTravel.intro}
+                  </p>
+                  <ul className="space-y-4">
+                    {enrichment.regionTravel.highlights.map((highlight, i) => (
+                      <li key={i} className="text-white/80 text-sm lg:text-base flex items-center gap-4">
+                        <span className="w-2 h-2 rounded-full bg-white/70 flex-shrink-0" />
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             </section>
@@ -800,7 +864,7 @@ export default async function WineDetailPage({ params }: Props) {
           {enrichment && (
             <>
               {/* Why This Wine Is Special */}
-              <section className="mt-10" aria-labelledby="special-heading">
+              <section className="mt-14" aria-labelledby="special-heading">
                 <h2 id="special-heading" className="text-2xl font-bold text-stone-900 mb-4">
                   Why {seoKeyword} Is Special
                 </h2>
@@ -824,14 +888,14 @@ export default async function WineDetailPage({ params }: Props) {
               </section>
 
               {/* Producer Profile */}
-              <section className="mt-10 bg-stone-50 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="producer-heading">
+              <section className="mt-14 bg-stone-50 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="producer-heading">
                 <h2 id="producer-heading" className="text-2xl font-bold text-stone-900 mb-4">
                   About {enrichment.producerProfile.name}
                 </h2>
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="md:col-span-2 space-y-4">
-                    <p className="text-stone-700 leading-relaxed">{enrichment.producerProfile.history}</p>
-                    <p className="text-stone-700 leading-relaxed"><strong>Philosophy:</strong> {enrichment.producerProfile.philosophy}</p>
+                    <p className="text-stone-700 leading-loose">{enrichment.producerProfile.history}</p>
+                    <p className="text-stone-700 leading-loose"><strong>Philosophy:</strong> {enrichment.producerProfile.philosophy}</p>
                   </div>
                   <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
                     <img
@@ -844,16 +908,16 @@ export default async function WineDetailPage({ params }: Props) {
               </section>
 
               {/* Vintage Analysis */}
-              <section className="mt-10" aria-labelledby="vintage-heading">
+              <section className="mt-14" aria-labelledby="vintage-heading">
                 <h2 id="vintage-heading" className="text-2xl font-bold text-stone-900 mb-4">
                   {seoKeyword}: Vintage Analysis
                 </h2>
-                <p className="text-stone-700 leading-relaxed text-lg">{enrichment.vintageAnalysis}</p>
+                <p className="text-stone-700 leading-loose text-lg">{enrichment.vintageAnalysis}</p>
               </section>
 
               {/* Critical Acclaim */}
               {enrichment.criticalAcclaim.length > 0 && (
-                <section className="mt-10" aria-labelledby="acclaim-heading">
+                <section className="mt-14" aria-labelledby="acclaim-heading">
                   <h2 id="acclaim-heading" className="text-2xl font-bold text-stone-900 mb-4">
                     {seoKeyword} Critical Acclaim
                   </h2>
@@ -872,15 +936,15 @@ export default async function WineDetailPage({ params }: Props) {
               )}
 
               {/* Context Section (unique deep-dive content) */}
-              <section className="mt-10" aria-labelledby="context-heading">
+              <section className="mt-14" aria-labelledby="context-heading">
                 <h2 id="context-heading" className="text-2xl font-bold text-stone-900 mb-4">
                   {enrichment.contextSection.title}
                 </h2>
-                <p className="text-stone-700 leading-relaxed text-lg">{enrichment.contextSection.content}</p>
+                <p className="text-stone-700 leading-loose text-lg">{enrichment.contextSection.content}</p>
               </section>
 
               {/* Cellaring Guide */}
-              <section className="mt-10 bg-stone-50 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="cellar-heading">
+              <section className="mt-14 bg-stone-50 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="cellar-heading">
                 <h2 id="cellar-heading" className="text-2xl font-bold text-stone-900 mb-4">
                   Cellaring {seoKeyword}
                 </h2>
@@ -910,7 +974,7 @@ export default async function WineDetailPage({ params }: Props) {
               </section>
 
               {/* Enhanced Food Pairings */}
-              <section className="mt-10" aria-labelledby="enhanced-pairings-heading">
+              <section className="mt-14" aria-labelledby="enhanced-pairings-heading">
                 <h2 id="enhanced-pairings-heading" className="text-2xl font-bold text-stone-900 mb-4">
                   Expert Food Pairings for {seoKeyword}
                 </h2>
@@ -924,16 +988,16 @@ export default async function WineDetailPage({ params }: Props) {
               </section>
 
               {/* Collector's Notes */}
-              <section className="mt-10 bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="collectors-heading">
+              <section className="mt-14 bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="collectors-heading">
                 <h2 id="collectors-heading" className="text-2xl font-bold text-stone-900 mb-4">
                   Collector&apos;s Notes: {seoKeyword}
                 </h2>
-                <p className="text-stone-700 leading-relaxed">{enrichment.collectorsNotes}</p>
+                <p className="text-stone-700 leading-loose text-lg">{enrichment.collectorsNotes}</p>
               </section>
 
               {/* External Authority Links */}
               {enrichment.externalLinks.length > 0 && (
-                <section className="mt-10" aria-labelledby="resources-heading">
+                <section className="mt-14" aria-labelledby="resources-heading">
                   <h2 id="resources-heading" className="text-2xl font-bold text-stone-900 mb-4">
                     Further Reading &amp; Resources
                   </h2>
