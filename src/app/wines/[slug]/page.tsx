@@ -1,10 +1,11 @@
-import { getWineBySlug, formatPrice, getWineInvestmentData, WineInvestmentData, getSimilarWines, getWinesFromRegion, Wine, getMerchantConfig, MerchantConfig } from '@/lib/wine-db'
+import { getWineBySlug, formatPrice, getWineInvestmentData, getSimilarWines, getWinesFromRegion, Wine, getMerchantConfig } from '@/lib/wine-db'
 import { getWineEnrichment } from '@/lib/wine-enrichment'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
 import { WineCardImage } from '@/components/WineImage'
 import { WinePageContext } from '@/components/WinePageContext'
+import { InvestmentCharts } from '@/components/InvestmentCharts'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -39,21 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-// Investment Rating Badge Colors (light theme)
-const ratingColors: Record<string, string> = {
-  'A+': 'bg-green-600 text-white',
-  'A': 'bg-green-500 text-white',
-  'B+': 'bg-amber-500 text-white',
-  'B': 'bg-amber-400 text-black',
-  'C': 'bg-orange-500 text-white',
-}
-
-// Recommendation Colors (light theme)
-const recommendationColors: Record<string, string> = {
-  'BUY': 'text-green-600 font-bold',
-  'HOLD': 'text-amber-600 font-bold',
-  'SELL': 'text-red-600 font-bold',
-}
+// Investment data visualization handled by InvestmentCharts client component
 
 // Food pairings based on wine type
 function getFoodPairings(wineType: string | null, grapeVariety: string | null): string[] {
@@ -235,96 +222,6 @@ function getRegionInfo(region: string | null): (RegionData & { name: string }) |
   return null
 }
 
-
-function InvestmentCard({ data, wineName }: { data: WineInvestmentData; wineName: string }) {
-  const prices = [
-    { year: '2020', price: data.price_2020 },
-    { year: '2021', price: data.price_2021 },
-    { year: '2022', price: data.price_2022 },
-    { year: '2023', price: data.price_2023 },
-    { year: '2024', price: data.price_2024 },
-    { year: '2025', price: data.price_2025 },
-  ].filter(p => p.price !== null)
-
-  const maxPrice = Math.max(...prices.map(p => Number(p.price) || 0))
-  const minPrice = Math.min(...prices.map(p => Number(p.price) || 0))
-  const range = maxPrice - minPrice || 1
-  const totalGrowth = minPrice > 0 ? ((maxPrice - minPrice) / minPrice * 100).toFixed(1) : '0'
-
-  return (
-    <section className="bg-stone-50 border border-stone-200 rounded-xl p-6 mt-10" aria-labelledby="investment-heading">
-      <div className="flex items-center justify-between mb-6">
-        <h2 id="investment-heading" className="text-2xl font-bold text-stone-900">
-          {wineName} Investment Profile
-        </h2>
-        <div className="flex items-center gap-3">
-          <span className={`px-3 py-1 rounded-full text-sm font-bold ${ratingColors[data.investment_rating || 'C']}`}>
-            {data.investment_rating || 'N/A'}
-          </span>
-          <span className={recommendationColors[data.analyst_recommendation || 'HOLD']}>
-            {data.analyst_recommendation || 'HOLD'}
-          </span>
-        </div>
-      </div>
-
-      {/* SEO: Wine name mentioned in investment context */}
-      <div className="mb-6 text-stone-700">
-        <p className="mb-3">
-          <strong className="text-stone-900">{wineName}</strong> has demonstrated{' '}
-          {data.annual_return_pct && data.annual_return_pct > 8 ? 'exceptional' : 'solid'}{' '}
-          investment performance with an annual return of <strong className="text-green-700">{data.annual_return_pct}%</strong>.
-        </p>
-        <p>
-          Over the past five years, {wineName} has grown by approximately <strong className="text-burgundy-700">{totalGrowth}%</strong>,
-          making it an attractive option for wine investors.
-        </p>
-      </div>
-
-      {/* Price History Chart */}
-      <h3 className="text-lg font-semibold text-stone-900 mb-3">{wineName} Price History</h3>
-      <div className="flex items-end gap-2 h-32 mb-6">
-        {prices.map((p, i) => {
-          const height = ((Number(p.price) - minPrice) / range) * 80 + 20
-          return (
-            <div key={p.year} className="flex-1 flex flex-col items-center">
-              <div className="text-xs text-stone-500 mb-1">£{Number(p.price).toLocaleString()}</div>
-              <div
-                className={`w-full rounded-t transition-all ${i === prices.length - 1 ? 'bg-burgundy-600' : 'bg-stone-300'}`}
-                style={{ height: `${height}%` }}
-              />
-              <span className="text-sm text-stone-500 mt-2">{p.year}</span>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Key Metrics */}
-      <h4 className="text-md font-semibold text-stone-900 mb-3">Key Metrics for {wineName}</h4>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="text-center p-4 bg-white rounded-lg border border-stone-200">
-          <div className="text-2xl font-bold text-green-600">{data.annual_return_pct ? `+${data.annual_return_pct}%` : 'N/A'}</div>
-          <div className="text-sm text-stone-500 mt-1">Annual Return</div>
-        </div>
-        <div className="text-center p-4 bg-white rounded-lg border border-stone-200">
-          <div className="text-2xl font-bold text-burgundy-600">{data.projected_5yr_return ? `+${data.projected_5yr_return}%` : 'N/A'}</div>
-          <div className="text-sm text-stone-500 mt-1">5-Year Projection</div>
-        </div>
-        <div className="text-center p-4 bg-white rounded-lg border border-stone-200">
-          <div className="text-2xl font-bold text-stone-700">{data.volatility_score || 'N/A'}<span className="text-sm text-stone-400">/10</span></div>
-          <div className="text-sm text-stone-500 mt-1">Volatility</div>
-        </div>
-        <div className="text-center p-4 bg-white rounded-lg border border-stone-200">
-          <div className="text-2xl font-bold text-stone-700">{data.liquidity_score || 'N/A'}<span className="text-sm text-stone-400">/10</span></div>
-          <div className="text-sm text-stone-500 mt-1">Liquidity</div>
-        </div>
-      </div>
-
-      <p className="text-xs text-stone-400 mt-6 text-center">
-        Investment data for {wineName} is illustrative. Past performance does not guarantee future results.
-      </p>
-    </section>
-  )
-}
 
 function RegionSection({ region, wineName }: { region: string; wineName: string }) {
   const info = getRegionInfo(region)
@@ -809,18 +706,39 @@ export default async function WineDetailPage({ params }: Props) {
 
           {/* Food Pairings Section (H2 with wine name - Mention 3) */}
           <section className="mt-14" aria-labelledby="pairings-heading">
-            <h2 id="pairings-heading" className="text-2xl font-bold text-stone-900 mb-6">
+            <h2 id="pairings-heading" className="text-2xl font-bold text-stone-900 mb-3">
               Food Pairings for {seoKeyword}
             </h2>
-            <p className="text-stone-700 mb-6 text-lg leading-loose">
+            <p className="text-stone-700 mb-8 text-lg leading-loose">
               {seoKeyword} pairs beautifully with a variety of dishes. Here are our recommended pairings:
             </p>
-            <div className="flex flex-wrap gap-3">
-              {foodPairings.map((pairing) => (
-                <span key={pairing} className="px-4 py-2 bg-stone-100 border border-stone-200 rounded-full text-stone-700">
-                  {pairing}
-                </span>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {foodPairings.slice(0, 8).map((pairing, i) => {
+                const foodImages = [
+                  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=80',
+                  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=80',
+                  'https://images.unsplash.com/photo-1432139509613-5c4255815697?w=400&q=80',
+                  'https://images.unsplash.com/photo-1546039907-7fa05f864c02?w=400&q=80',
+                  'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80',
+                  'https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&q=80',
+                  'https://images.unsplash.com/photo-1482049016530-d79f36437c8a?w=400&q=80',
+                  'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&q=80',
+                ]
+                return (
+                  <div key={pairing} className="relative aspect-[4/3] rounded-xl overflow-hidden group">
+                    <img
+                      src={foodImages[i % foodImages.length]}
+                      alt={`${pairing} paired with ${seoKeyword}`}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <span className="text-white font-semibold text-sm drop-shadow-lg">{pairing}</span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </section>
 
@@ -912,11 +830,23 @@ export default async function WineDetailPage({ params }: Props) {
               </section>
 
               {/* Vintage Analysis */}
-              <section className="mt-14" aria-labelledby="vintage-heading">
-                <h2 id="vintage-heading" className="text-2xl font-bold text-stone-900 mb-4">
+              <section className="mt-16" aria-labelledby="vintage-heading">
+                <h2 id="vintage-heading" className="text-2xl font-bold text-stone-900 mb-6">
                   {seoKeyword}: Vintage Analysis
                 </h2>
-                <p className="text-stone-700 leading-loose text-lg">{enrichment.vintageAnalysis}</p>
+                <div className="bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-xl p-8">
+                  <div className="space-y-4">
+                    {enrichment.vintageAnalysis.split('. ').reduce((acc: string[], sentence, i, arr) => {
+                      const chunkSize = Math.ceil(arr.length / 2)
+                      const chunkIndex = Math.floor(i / chunkSize)
+                      if (!acc[chunkIndex]) acc[chunkIndex] = ''
+                      acc[chunkIndex] += sentence + (i < arr.length - 1 ? '. ' : '')
+                      return acc
+                    }, []).map((para, i) => (
+                      <p key={i} className="text-stone-700 leading-loose text-lg">{para}</p>
+                    ))}
+                  </div>
+                </div>
               </section>
 
               {/* Critical Acclaim */}
@@ -940,63 +870,125 @@ export default async function WineDetailPage({ params }: Props) {
               )}
 
               {/* Context Section (unique deep-dive content) */}
-              <section className="mt-14" aria-labelledby="context-heading">
-                <h2 id="context-heading" className="text-2xl font-bold text-stone-900 mb-4">
+              <section className="mt-16" aria-labelledby="context-heading">
+                <h2 id="context-heading" className="text-2xl font-bold text-stone-900 mb-6">
                   {enrichment.contextSection.title}
                 </h2>
-                <p className="text-stone-700 leading-loose text-lg">{enrichment.contextSection.content}</p>
-              </section>
-
-              {/* Cellaring Guide */}
-              <section className="mt-14 bg-stone-50 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="cellar-heading">
-                <h2 id="cellar-heading" className="text-2xl font-bold text-stone-900 mb-4">
-                  Cellaring {seoKeyword}
-                </h2>
-                <div className="grid md:grid-cols-2 gap-6 mb-4">
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <span className="text-sm font-semibold text-stone-500 w-24 flex-shrink-0">Temperature</span>
-                      <span className="text-stone-700">{enrichment.cellaring.temperature}</span>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <span className="text-sm font-semibold text-stone-500 w-24 flex-shrink-0">Humidity</span>
-                      <span className="text-stone-700">{enrichment.cellaring.humidity}</span>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <span className="text-sm font-semibold text-stone-500 w-24 flex-shrink-0">Position</span>
-                      <span className="text-stone-700">{enrichment.cellaring.position}</span>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <span className="text-sm font-semibold text-stone-500 w-24 flex-shrink-0">Peak Window</span>
-                      <span className="text-stone-700 font-medium">{enrichment.cellaring.peakWindow}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-stone-700 leading-relaxed">{enrichment.cellaring.advice}</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Enhanced Food Pairings */}
-              <section className="mt-14" aria-labelledby="enhanced-pairings-heading">
-                <h2 id="enhanced-pairings-heading" className="text-2xl font-bold text-stone-900 mb-4">
-                  Expert Food Pairings for {seoKeyword}
-                </h2>
-                <div className="flex flex-wrap gap-3">
-                  {enrichment.additionalFoodPairings.map((pairing) => (
-                    <span key={pairing} className="px-4 py-2 bg-burgundy-50 border border-burgundy-200 rounded-full text-burgundy-700">
-                      {pairing}
-                    </span>
+                <div className="space-y-5">
+                  {enrichment.contextSection.content.split('. ').reduce((acc: string[], sentence, i, arr) => {
+                    const chunkSize = Math.ceil(arr.length / 3)
+                    const chunkIndex = Math.floor(i / chunkSize)
+                    if (!acc[chunkIndex]) acc[chunkIndex] = ''
+                    acc[chunkIndex] += sentence + (i < arr.length - 1 ? '. ' : '')
+                    return acc
+                  }, []).map((para, i) => (
+                    <p key={i} className="text-stone-700 leading-loose text-lg">{para}</p>
                   ))}
                 </div>
               </section>
 
-              {/* Collector's Notes */}
-              <section className="mt-14 bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-xl p-6 md:p-8" aria-labelledby="collectors-heading">
-                <h2 id="collectors-heading" className="text-2xl font-bold text-stone-900 mb-4">
-                  Collector&apos;s Notes: {seoKeyword}
+              {/* Cellaring Guide */}
+              <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="cellar-heading">
+                <div className="relative min-h-[400px]">
+                  <img
+                    src="https://images.unsplash.com/photo-1504279577054-acfeccf8fc52?w=1200&q=80"
+                    alt={`Wine cellar - cellaring guide for ${seoKeyword}`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
+                  <div className="relative py-12 px-8 md:px-12">
+                    <h2 id="cellar-heading" className="text-3xl font-light text-white tracking-tight mb-8">
+                      Cellaring {seoKeyword}
+                    </h2>
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div className="space-y-5">
+                        <div className="flex items-start gap-4">
+                          <span className="text-sm font-semibold text-white/60 w-28 flex-shrink-0 uppercase tracking-wider">Temperature</span>
+                          <span className="text-white/90">{enrichment.cellaring.temperature}</span>
+                        </div>
+                        <div className="flex items-start gap-4">
+                          <span className="text-sm font-semibold text-white/60 w-28 flex-shrink-0 uppercase tracking-wider">Humidity</span>
+                          <span className="text-white/90">{enrichment.cellaring.humidity}</span>
+                        </div>
+                        <div className="flex items-start gap-4">
+                          <span className="text-sm font-semibold text-white/60 w-28 flex-shrink-0 uppercase tracking-wider">Position</span>
+                          <span className="text-white/90">{enrichment.cellaring.position}</span>
+                        </div>
+                        <div className="flex items-start gap-4">
+                          <span className="text-sm font-semibold text-white/60 w-28 flex-shrink-0 uppercase tracking-wider">Peak Window</span>
+                          <span className="text-white font-medium text-lg">{enrichment.cellaring.peakWindow}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-white/80 leading-loose text-base">{enrichment.cellaring.advice}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Enhanced Food Pairings - Image Strip */}
+              <section className="mt-16" aria-labelledby="enhanced-pairings-heading">
+                <h2 id="enhanced-pairings-heading" className="text-2xl font-bold text-stone-900 mb-3">
+                  Expert Food Pairings for {seoKeyword}
                 </h2>
-                <p className="text-stone-700 leading-loose text-lg">{enrichment.collectorsNotes}</p>
+                <p className="text-stone-600 mb-6">Curated pairings recommended by our sommelier team.</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {enrichment.additionalFoodPairings.slice(0, 8).map((pairing, i) => {
+                    const expertFoodImages = [
+                      'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&q=80',
+                      'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&q=80',
+                      'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&q=80',
+                      'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=400&q=80',
+                      'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&q=80',
+                      'https://images.unsplash.com/photo-1481391319762-47dff72954d9?w=400&q=80',
+                      'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400&q=80',
+                      'https://images.unsplash.com/photo-1515778767554-42f384dba9c6?w=400&q=80',
+                    ]
+                    return (
+                      <div key={pairing} className="relative aspect-[4/3] rounded-xl overflow-hidden group">
+                        <img
+                          src={expertFoodImages[i % expertFoodImages.length]}
+                          alt={`${pairing} - expert pairing for ${seoKeyword}`}
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 p-3">
+                          <span className="text-white font-semibold text-sm drop-shadow-lg">{pairing}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+
+              {/* Collector's Notes - with hero image */}
+              <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="collectors-heading">
+                <div className="relative min-h-[350px]">
+                  <img
+                    src="https://images.unsplash.com/photo-1516594915307-8f71463e904b?w=1200&q=80"
+                    alt={`Wine collection - collector's notes for ${seoKeyword}`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/65 to-black/50" />
+                  <div className="relative py-12 px-8 md:px-12 max-w-3xl">
+                    <h2 id="collectors-heading" className="text-3xl font-light text-white tracking-tight mb-6">
+                      Collector&apos;s Notes: {seoKeyword}
+                    </h2>
+                    <div className="space-y-4">
+                      {enrichment.collectorsNotes.split('. ').reduce((acc: string[], sentence, i, arr) => {
+                        const chunkSize = Math.ceil(arr.length / 3)
+                        const chunkIndex = Math.floor(i / chunkSize)
+                        if (!acc[chunkIndex]) acc[chunkIndex] = ''
+                        acc[chunkIndex] += sentence + (i < arr.length - 1 ? '. ' : '')
+                        return acc
+                      }, []).map((para, i) => (
+                        <p key={i} className="text-white/85 leading-loose text-base">{para}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </section>
 
               {/* External Authority Links */}
@@ -1056,7 +1048,34 @@ export default async function WineDetailPage({ params }: Props) {
           )}
 
           {/* Investment Profile (H2 with wine name - Mention 5) */}
-          {investmentData && <InvestmentCard data={investmentData} wineName={fullWineName} />}
+          {investmentData && (
+            <section className="mt-16 -mx-6 relative overflow-hidden rounded-2xl" aria-labelledby="investment-heading">
+              <div className="relative bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 py-12 px-6 md:px-10">
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(124,58,237,0.3) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(34,197,94,0.2) 0%, transparent 50%)' }} />
+                </div>
+                <div className="relative">
+                  <InvestmentCharts
+                    prices={[
+                      { year: '2020', price: investmentData.price_2020 },
+                      { year: '2021', price: investmentData.price_2021 },
+                      { year: '2022', price: investmentData.price_2022 },
+                      { year: '2023', price: investmentData.price_2023 },
+                      { year: '2024', price: investmentData.price_2024 },
+                      { year: '2025', price: investmentData.price_2025 },
+                    ]}
+                    annualReturn={investmentData.annual_return_pct}
+                    volatility={investmentData.volatility_score}
+                    liquidity={investmentData.liquidity_score}
+                    projectedReturn={investmentData.projected_5yr_return}
+                    rating={investmentData.investment_rating}
+                    recommendation={investmentData.analyst_recommendation}
+                    wineName={seoKeyword}
+                  />
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Region Information (H2 with wine name - Mention 6) */}
           {wine.region && (
