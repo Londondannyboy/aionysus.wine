@@ -264,3 +264,17 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
 export function getWineEnrichment(slug: string): WineEnrichment | null {
   return WINE_ENRICHMENTS[slug] || null
 }
+
+/**
+ * Get all enriched wines for internal linking
+ * Returns slugs and their SEO keywords for use as anchor text
+ */
+export function getEnrichedWineLinks(excludeSlug?: string): { slug: string; keyword: string; region: string }[] {
+  return Object.entries(WINE_ENRICHMENTS)
+    .filter(([slug]) => slug !== excludeSlug)
+    .map(([slug, data]) => ({
+      slug,
+      keyword: data.seo?.bodyKeyword || slug.replace(/-/g, ' '),
+      region: data.regionTravel?.title?.split(':')[0]?.replace('Discover ', '') || '',
+    }))
+}

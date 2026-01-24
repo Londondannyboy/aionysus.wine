@@ -1,5 +1,5 @@
 import { getWineBySlug, formatPrice, getWineInvestmentData, getSimilarWines, getWinesFromRegion, Wine, getMerchantConfig } from '@/lib/wine-db'
-import { getWineEnrichment } from '@/lib/wine-enrichment'
+import { getWineEnrichment, getEnrichedWineLinks } from '@/lib/wine-enrichment'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -433,6 +433,9 @@ export default async function WineDetailPage({ params }: Props) {
 
   // Check for skyscraper enrichment content
   const enrichment = getWineEnrichment(slug)
+
+  // Get enriched wines for internal linking (keyword anchor text)
+  const featuredWineLinks = getEnrichedWineLinks(slug)
 
   // Map regions to dedicated region pages for internal linking
   const REGION_PAGE_MAP: Record<string, { slug: string; name: string }> = {
@@ -1114,6 +1117,26 @@ export default async function WineDetailPage({ params }: Props) {
                         <p className="text-sm font-bold text-stone-900 mt-2">{formatPrice(rw.price_retail)}</p>
                       )}
                     </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Featured Collection - Internal keyword links for SEO */}
+          {featuredWineLinks.length > 0 && (
+            <section className="mt-14" aria-labelledby="featured-heading">
+              <h3 id="featured-heading" className="text-lg font-semibold text-stone-900 mb-4">
+                From Our Featured Collection
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                {featuredWineLinks.map((fw) => (
+                  <Link
+                    key={fw.slug}
+                    href={`/wines/${fw.slug}`}
+                    className="px-4 py-2 bg-burgundy-50 border border-burgundy-200 rounded-lg text-burgundy-700 hover:bg-burgundy-100 hover:border-burgundy-400 transition-colors text-sm font-medium"
+                  >
+                    {fw.keyword}
                   </Link>
                 ))}
               </div>
