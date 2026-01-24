@@ -59,7 +59,7 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
     heroAlt: 'Boal Borges 1875 Madeira wine - one of the oldest wines in the world from the historic island of Madeira',
     producerProfile: {
       name: 'H.M. Borges',
-      history: 'H.M. Borges is one of the most historic wine houses on the island of Madeira, founded in 1877 by Henrique Menezes Borges. The house has been family-owned for over 145 years, maintaining the traditional canteiro ageing method that makes Madeira among the most long-lived wines on earth. Their cellars in Funchal contain wines dating back to the early 19th century, including this extraordinary 1875 Boal — a wine that predates the founding of the company itself, acquired from older reserves.',
+      history: 'H.M. Borges is one of the most historic wine houses on the island of Madeira, founded in 1877 by Henrique Menezes Borges. The house has been family-owned for over 145 years, maintaining the traditional canteiro ageing method that makes Madeira among the most long-lived wines on earth. Their cellars in Funchal contain wines dating back to the early 19th century, including the extraordinary Boal Borges 1875 — a wine that predates the founding of the company itself, acquired from older reserves.',
       philosophy: 'H.M. Borges follows the centuries-old canteiro ageing method, where wines are placed in warm lofts (estufas naturais) and aged slowly in American oak casks for decades. This patient, natural oxidative ageing creates wines of extraordinary complexity that are virtually indestructible, capable of lasting centuries in bottle.',
       image: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80',
       imageAlt: 'Historic Madeira wine lodge interior with aged oak casks containing rare vintage Boal Madeira',
@@ -68,7 +68,7 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
       'One of the oldest commercially available wines in the world — over 145 years old',
       'Pre-phylloxera vintage from 1875, when European vines were still on their own rootstock',
       'Boal (Bual) is one of the four noble grape varieties of Madeira, producing medium-sweet wines of extraordinary complexity',
-      'Madeira is virtually indestructible — this wine will continue to improve for centuries',
+      'Madeira is virtually indestructible — Boal Borges 1875 will continue to improve for centuries',
       'A living piece of viticultural history that predates automobiles, electricity, and the telephone',
       'The canteiro ageing method gives Madeira its unique caramelised, smoky character',
     ],
@@ -77,8 +77,8 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
       temperature: '12-18°C (Madeira is extremely resilient to temperature variation)',
       humidity: '60-70% (less critical than for table wines due to oxidative style)',
       position: 'Upright is acceptable for Madeira — the high acidity and fortification protect the wine',
-      advice: 'This 1875 Boal H.M. Borges Madeira is among the most robust wines ever made. Unlike table wines, aged Madeira actually benefits from its exposure to heat and air during the ageing process. Once opened, this wine will remain in perfect condition for months — even years — as the oxidative ageing process means there is no degradation from air exposure.',
-      peakWindow: 'Now — essentially indefinite. This 1875 Boal will not decline in our lifetimes.',
+      advice: 'Boal Borges 1875 is among the most robust wines ever made. Unlike table wines, aged Madeira actually benefits from its exposure to heat and air during the ageing process. Once opened, Boal Borges 1875 will remain in perfect condition for months — even years — as the oxidative ageing process means there is no degradation from air exposure.',
+      peakWindow: 'Now — essentially indefinite. Boal Borges 1875 will not decline in our lifetimes.',
     },
     criticalAcclaim: [
       { source: 'Richard Mayson (Madeira Expert)', score: 'Exceptional', quote: 'Pre-phylloxera Madeira wines represent the absolute pinnacle of the winemaker\'s art — wines that have defeated time itself.' },
