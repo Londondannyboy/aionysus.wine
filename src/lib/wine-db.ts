@@ -418,8 +418,24 @@ export async function getSimilarWines(
     }
   }
 
-  // Fallback to random wines
+  // Fallback to random wines, preferring those with real web-accessible images
   const wines = await sql`
+    SELECT id, name, slug, winery, region, country, grape_variety,
+           vintage, wine_type, price_retail, image_url
+    FROM wines
+    WHERE id != ${wineId} AND is_active = true
+      AND image_url IS NOT NULL
+      AND image_url NOT LIKE '%placeholder%'
+      AND image_url NOT LIKE '/Users/%'
+    ORDER BY RANDOM()
+    LIMIT ${limit}
+  `
+  if (wines.length >= limit) {
+    return wines as Wine[]
+  }
+
+  // Final fallback if not enough wines with images
+  const allWines = await sql`
     SELECT id, name, slug, winery, region, country, grape_variety,
            vintage, wine_type, price_retail, image_url
     FROM wines
@@ -427,5 +443,5 @@ export async function getSimilarWines(
     ORDER BY RANDOM()
     LIMIT ${limit}
   `
-  return wines as Wine[]
+  return allWines as Wine[]
 }
