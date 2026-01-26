@@ -528,7 +528,7 @@ export default async function WineDetailPage({ params }: Props) {
   }
   tocSections.push({ id: 'pairings-heading', label: 'Food Pairings' })
   if (investmentData) {
-    tocSections.push({ id: 'investment-heading', label: 'Investment Profile' })
+    tocSections.push({ id: 'investment-heading', label: `Investment Profile` })
   }
   if (wine.tasting_notes) {
     tocSections.push({ id: 'tasting-heading', label: 'Tasting Notes' })
@@ -843,7 +843,7 @@ export default async function WineDetailPage({ params }: Props) {
               Food Pairings for {seoKeyword}
             </h2>
             <p className="text-stone-700 mb-8 text-lg leading-loose">
-              {seoKeyword} pairs beautifully with a variety of dishes. Here are our recommended pairings for {seoKeyword}:
+              <strong>{seoKeyword}</strong> pairs beautifully with a variety of dishes. Here are our top recommendations:
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {foodPairings.slice(0, 8).map((pairing, i) => {
@@ -880,7 +880,7 @@ export default async function WineDetailPage({ params }: Props) {
           {investmentData && (
             <section className="mt-14" aria-labelledby="investment-heading">
               <h2 id="investment-heading" className="text-2xl font-bold text-stone-900 mb-6">
-                {seoKeyword}
+                Investment Profile: {seoKeyword}
               </h2>
               <InvestmentCharts
                 prices={[
