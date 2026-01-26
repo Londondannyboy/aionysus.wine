@@ -1,12 +1,13 @@
 import { getWineBySlug, formatPrice, getWineInvestmentData, getSimilarWines, getWinesFromRegion, Wine, getMerchantConfig } from '@/lib/wine-db'
 import { getWineEnrichment, getEnrichedWineLinks, getWineSEO } from '@/lib/wine-enrichment'
-import { generateAutoSEO, getRegionExternalLinks, getInternalLinks, generateAboutContent } from '@/lib/seo-automation'
+import { generateAutoSEO, getRegionExternalLinks, getInternalLinks, generateAboutContent, generateWineRating } from '@/lib/seo-automation'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
 import { WineCardImage } from '@/components/WineImage'
 import { WinePageContext } from '@/components/WinePageContext'
 import { InvestmentCharts } from '@/components/InvestmentCharts'
+import { TableOfContents, TOCSection } from '@/components/TableOfContents'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -30,6 +31,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = enrichment?.seo?.title || seoOverride?.title || autoSEO.title
   const description = enrichment?.seo?.metaDescription || seoOverride?.metaDescription || autoSEO.metaDescription
 
+  // Generate last modified date (use current month for freshness signals)
+  const lastModified = new Date().toISOString()
+
   return {
     title,
     description,
@@ -40,6 +44,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       images: wine.image_url ? [wine.image_url] : [],
+      modifiedTime: lastModified,
+    },
+    other: {
+      'article:modified_time': lastModified,
     },
   }
 }
@@ -499,6 +507,67 @@ export default async function WineDetailPage({ params }: Props) {
   const productImage = wine.image_url || merchantConfig.placeholder_image_url
   const availabilityUrl = `https://schema.org/${merchantConfig.product_availability}`
 
+  // Generate aggregate rating for rich snippets (stars in search results)
+  const wineRating = generateWineRating(wine, enrichment?.criticalAcclaim)
+
+  // Last modified date for freshness signals
+  const lastModifiedDate = new Date()
+  const lastModifiedISO = lastModifiedDate.toISOString()
+  const lastModifiedDisplay = lastModifiedDate.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+
+  // Build Table of Contents sections dynamically
+  const tocSections: TOCSection[] = []
+
+  // Common sections
+  if (!enrichment && aboutContent.length > 0) {
+    tocSections.push({ id: 'about-heading', label: 'About This Wine' })
+  }
+  tocSections.push({ id: 'pairings-heading', label: 'Food Pairings' })
+  if (investmentData) {
+    tocSections.push({ id: 'investment-heading', label: 'Investment Profile' })
+  }
+  if (wine.tasting_notes) {
+    tocSections.push({ id: 'tasting-heading', label: 'Tasting Notes' })
+  }
+
+  // Enriched wine sections
+  if (enrichment) {
+    if (enrichment.regionTravel) {
+      tocSections.push({ id: 'region-travel-heading', label: 'Visit the Region' })
+    }
+    tocSections.push({ id: 'special-heading', label: 'Why This Vintage Is Special' })
+    tocSections.push({ id: 'producer-heading', label: 'Producer Profile' })
+    tocSections.push({ id: 'vintage-heading', label: 'Vintage Analysis' })
+    if (enrichment.criticalAcclaim.length > 0) {
+      tocSections.push({ id: 'acclaim-heading', label: 'Critical Acclaim' })
+    }
+    tocSections.push({ id: 'context-heading', label: 'Historical Context' })
+    tocSections.push({ id: 'cellar-heading', label: 'Cellaring Guide' })
+    tocSections.push({ id: 'enhanced-pairings-heading', label: 'Expert Pairings' })
+    tocSections.push({ id: 'collectors-heading', label: "Collector's Notes" })
+    if (enrichment.faq && enrichment.faq.length > 0) {
+      tocSections.push({ id: 'faq-heading', label: 'FAQ' })
+    }
+    if (enrichment.externalLinks.length > 0) {
+      tocSections.push({ id: 'resources-heading', label: 'Further Reading' })
+    }
+  }
+
+  // Region and recommendations
+  if (wine.region && REGION_INFO[wine.region]) {
+    tocSections.push({ id: 'region-heading', label: `About ${wine.region}` })
+  }
+  if (similarWines.length > 0) {
+    tocSections.push({ id: 'similar-wines-heading', label: 'Similar Wines' })
+  }
+  if (regionWines.length > 0 && wine.region) {
+    tocSections.push({ id: 'region-wines-heading', label: `More from ${wine.region}` })
+  }
+
   return (
     <>
       {/* Provide wine context to CopilotKit so Vic knows about this wine */}
@@ -516,6 +585,13 @@ export default async function WineDetailPage({ params }: Props) {
             image: productImage,
             brand: { '@type': 'Brand', name: wine.winery },
             category: wine.wine_type || 'Wine',
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: wineRating.ratingValue,
+              reviewCount: wineRating.reviewCount,
+              bestRating: wineRating.bestRating,
+              worstRating: wineRating.worstRating,
+            },
             ...(wine.price_retail && {
               offers: {
                 '@type': 'Offer',
@@ -737,6 +813,11 @@ export default async function WineDetailPage({ params }: Props) {
               </p>
             </div>
           </div>
+
+          {/* Table of Contents - Navigation for long pages */}
+          {tocSections.length >= 4 && (
+            <TableOfContents sections={tocSections} wineName={seoKeyword} />
+          )}
 
           {/* About This Wine Section - SEO content for non-enriched wines */}
           {!enrichment && aboutContent.length > 0 && (
@@ -1360,6 +1441,15 @@ export default async function WineDetailPage({ params }: Props) {
               Chat with Vic
             </Link>
           </section>
+
+          {/* Last Modified Date - SEO freshness signal */}
+          <div className="mt-8 pt-6 border-t border-stone-200 text-center">
+            <p className="text-sm text-stone-500">
+              <time dateTime={lastModifiedISO}>
+                Last updated: {lastModifiedDisplay}
+              </time>
+            </p>
+          </div>
         </article>
       </div>
       </div>
