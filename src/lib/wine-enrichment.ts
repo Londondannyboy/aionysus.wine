@@ -50,6 +50,7 @@ export interface WineEnrichment {
     intro: string
     highlights: string[]
   }
+  faq?: { question: string; answer: string }[]
 }
 
 export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
@@ -97,18 +98,26 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
       { name: 'Wikipedia: Madeira Wine', url: 'https://en.wikipedia.org/wiki/Madeira_wine', description: 'Comprehensive guide to Madeira wine history and production' },
       { name: 'Wikipedia: Boal Grape', url: 'https://en.wikipedia.org/wiki/Boal_(grape)', description: 'The noble Boal (Bual) grape variety of Madeira' },
       { name: 'Wikipedia: Phylloxera', url: 'https://en.wikipedia.org/wiki/Phylloxera', description: 'The vine epidemic that makes pre-1875 wines so rare' },
+      { name: 'BBC Travel: Madeira', url: 'https://www.bbc.com/travel/article/20191110-madeira-the-wine-that-cant-be-destroyed', description: 'BBC feature on Madeira wine production and history' },
+      { name: 'BBC Good Food: Madeira Wine', url: 'https://www.bbcgoodfood.com/glossary/madeira-glossary', description: 'BBC guide to Madeira wine styles and food pairing' },
       { name: 'Jancis Robinson: Madeira', url: 'https://www.jancisrobinson.com/learn/wine-regions/portugal/madeira', description: 'Master of Wine expert guide to Madeira wines' },
       { name: 'Decanter: Madeira Guide', url: 'https://www.decanter.com/wine/wine-regions/madeira/', description: 'Award-winning wine magazine Madeira coverage' },
       { name: 'Wine Spectator: Madeira', url: 'https://www.winespectator.com/articles/vintage-madeira', description: 'Expert reviews of vintage Madeira wines' },
       { name: 'Wine-Searcher: Boal Madeira', url: 'https://www.wine-searcher.com/grape-1628-boal', description: 'Market prices and availability worldwide' },
       { name: 'Visit Madeira', url: 'https://www.visitmadeira.pt', description: 'Official tourism and wine route information' },
+      { name: 'Visit Portugal: Madeira', url: 'https://www.visitportugal.com/en/destinos/madeira', description: 'Official Portuguese tourism board Madeira guide' },
+      { name: 'Madeira Island Tourism', url: 'https://www.madeiraallyear.com', description: 'Regional tourism authority wine experiences' },
       { name: 'Liv-ex Fine Wine Exchange', url: 'https://www.liv-ex.com', description: 'Global marketplace for fine wine investment' },
       { name: 'The Wine Society: Madeira', url: 'https://www.thewinesociety.com/shop/madeira', description: 'UK merchant specialising in aged Madeira' },
+      { name: 'Berry Bros & Rudd: Madeira', url: 'https://www.bbr.com/region-fortified-wines-madeira', description: 'Britain oldest wine merchant Madeira selection' },
+      { name: 'Hedonism Wines: Madeira', url: 'https://hedonism.co.uk/wine/type/madeira', description: 'Luxury London wine retailer rare Madeira collection' },
+      { name: 'Christie\'s Wine Auctions', url: 'https://www.christies.com/wine', description: 'Historic auction house for rare vintage wines' },
+      { name: 'Sotheby\'s Wine', url: 'https://www.sothebyswine.com', description: 'Premium auction house wine department' },
     ],
     seo: {
       title: 'Boal Borges 1875 - Vintage Madeira Wine | Aionysus',
       h1: 'Boal Borges 1875 Madeira',
-      metaDescription: 'Boal Borges 1875 — buy this rare pre-phylloxera H.M. Borges Madeira wine. Over 145 years old, one of the oldest commercially available wines. Expert tasting notes, investment analysis & food pairings.',
+      metaDescription: 'Buy Boal Borges 1875 — rare pre-phylloxera Madeira from H.M. Borges. 145+ years old, expert tasting notes & investment analysis.',
       imageAlt: 'Boal Borges 1875 wine bottle - rare pre-phylloxera H.M. Borges vintage Madeira',
       bodyKeyword: 'Boal Borges 1875',
     },
@@ -127,6 +136,40 @@ export const WINE_ENRICHMENTS: Record<string, WineEnrichment> = {
         'Taste vintages spanning three centuries in a single sitting',
       ],
     },
+    faq: [
+      {
+        question: 'What makes Boal Borges 1875 so special?',
+        answer: 'Boal Borges 1875 is one of the oldest commercially available wines in the world, at over 145 years old. It is a pre-phylloxera vintage, meaning it was made before the devastating vine epidemic that destroyed most European vineyards. The wine was produced from ungrafted Boal vines on their original rootstock, which many believe produced wines of superior concentration and complexity. Today, fewer than 100 casks of pre-phylloxera Madeira exist worldwide.',
+      },
+      {
+        question: 'How should I store Boal Borges 1875?',
+        answer: 'Unlike table wines, Madeira like Boal Borges 1875 is remarkably resilient. Store at 12-18°C (Madeira tolerates temperature variation well), with 60-70% humidity. Bottles can be stored upright — the high acidity and fortification protect the wine. Once opened, Boal Borges 1875 can remain in excellent condition for months or even years due to its oxidative ageing process.',
+      },
+      {
+        question: 'What does Boal Borges 1875 taste like?',
+        answer: 'Boal Borges 1875 displays extraordinary complexity developed over 145+ years of ageing. Expect aromas of burnt caramel, dried fruits, roasted coffee, and exotic spices on the nose. The palate reveals layers of toffee, orange peel, walnut, and subtle smoke, with Madeira\'s signature piercing acidity providing remarkable freshness. The finish extends for minutes, evolving constantly.',
+      },
+      {
+        question: 'Is Boal Borges 1875 a good investment?',
+        answer: 'Pre-phylloxera Madeira represents one of the most secure wine investments available. Boal Borges 1875 is essentially indestructible and will continue improving indefinitely, while the supply can only diminish over time. The combination of extreme rarity, historical significance, and the wine\'s immortality makes it highly sought-after by collectors. Ensure provenance documentation from H.M. Borges or reputable auction houses.',
+      },
+      {
+        question: 'What food pairs well with Boal Borges 1875?',
+        answer: 'Boal Borges 1875 pairs magnificently with rich desserts like crème caramel, pecan pie, and dark chocolate truffles. It also complements aged hard cheeses (Mimolette, aged Gouda), blue cheeses (Stilton, Roquefort), and foie gras. Many connoisseurs enjoy it as a digestif alongside a fine cigar, or with roasted nuts as an after-dinner contemplation wine.',
+      },
+      {
+        question: 'What is pre-phylloxera wine?',
+        answer: 'Pre-phylloxera wines are bottles produced before the phylloxera epidemic devastated European vineyards (1860s-1880s). Phylloxera is a vine pest from North America that kills vines by attacking their roots. After the epidemic, nearly all European vines were replanted on resistant American rootstock. Pre-phylloxera wines like Boal Borges 1875 come from the original ungrafted European vines, making them exceptionally rare and historically significant.',
+      },
+      {
+        question: 'Who is H.M. Borges?',
+        answer: 'H.M. Borges is one of Madeira\'s most historic wine houses, founded in 1877 by Henrique Menezes Borges. The family-owned company has maintained traditional canteiro ageing methods for over 145 years. Their cellars in Funchal contain wines dating to the early 19th century. The 1875 vintage predates the company\'s founding — it was acquired from older reserves held by other lodges.',
+      },
+      {
+        question: 'How long will Boal Borges 1875 last?',
+        answer: 'Madeira is considered virtually immortal among wines. Boal Borges 1875 will not only last but continue to improve for centuries. The unique canteiro ageing process, combined with high acidity and fortification, makes Madeira essentially indestructible. There are Madeira wines from the 1700s that still drink beautifully today. Your Boal Borges 1875 will outlast you and several generations to come.',
+      },
+    ],
   },
 
   '2011-ch-petrus-pomerol': {
@@ -331,4 +374,141 @@ export function getEnrichedWineLinks(excludeSlug?: string): { slug: string; keyw
       keyword: data.seo?.bodyKeyword || slug.replace(/-/g, ' '),
       region: data.regionTravel?.title?.split(':')[0]?.replace('Discover ', '') || '',
     }))
+}
+
+/**
+ * Lightweight SEO overrides for wines without full enrichment
+ * Targets specific keywords from Google Search Console data
+ */
+export interface WineSEO {
+  title: string
+  metaDescription: string
+  h1?: string
+  bodyKeyword: string
+}
+
+export const WINE_SEO_OVERRIDES: Record<string, WineSEO> = {
+  // Position 13 - Close to page 1!
+  'denbies-wine-estate-demi-sec-nv': {
+    title: 'Denbies Demi Sec NV | English Sparkling Wine | Aionysus',
+    metaDescription: 'Buy Denbies Demi Sec NV — award-winning English sparkling wine from Surrey. Off-dry, elegant bubbles perfect for celebrations. Free UK delivery available.',
+    bodyKeyword: 'Denbies Demi Sec',
+  },
+  // Position 33
+  '2016-henschke-hill-of-roses': {
+    title: 'Henschke Hill of Roses 2016 | Premium Shiraz | Aionysus',
+    metaDescription: 'Buy Henschke Hill of Roses 2016 — exceptional single-vineyard Shiraz from Eden Valley. From Australia\'s most celebrated producer. Expert tasting notes & food pairings.',
+    bodyKeyword: 'Henschke Hill of Roses',
+  },
+  // Position 38
+  '2004-camartina-toscana-querciabella': {
+    title: 'Camartina 2004 | Querciabella Super Tuscan | Aionysus',
+    metaDescription: 'Buy Camartina 2004 by Querciabella — iconic Super Tuscan from Tuscany. Cabernet Sauvignon and Sangiovese blend. Aged 20 years, drinking beautifully now.',
+    bodyKeyword: 'Camartina 2004',
+  },
+  // Position 47
+  '2023-chablis-domaine-william-fevre': {
+    title: 'William Fevre Chablis 2023 | Domaine Chablis | Aionysus',
+    metaDescription: 'Buy William Fevre Chablis 2023 — classic Burgundy Chardonnay from one of Chablis\' finest domaines. Pure, mineral, precise. Expert tasting notes included.',
+    bodyKeyword: 'William Fevre Chablis',
+  },
+  // Position 48
+  '2018-vougeot-clos-du-village-benjamin-leroux': {
+    title: 'Clos du Village 2018 | Benjamin Leroux Vougeot | Aionysus',
+    metaDescription: 'Buy Clos du Village 2018 from Benjamin Leroux — exceptional village Vougeot Burgundy. Elegant Pinot Noir from a rising star producer. Expert tasting notes.',
+    bodyKeyword: 'Clos du Village',
+  },
+  // Position 51
+  'hattingley-valley-the-english-gent-2021': {
+    title: 'The English Gent 2021 | Hattingley Valley | Aionysus',
+    metaDescription: 'Buy The English Gent 2021 from Hattingley Valley — premium English sparkling wine. Classic method, elegant bubbles from Hampshire. Award-winning producer.',
+    bodyKeyword: 'The English Gent',
+  },
+  // Position 65 - Good impressions
+  '2021-petit-caro-bodegas-caro': {
+    title: 'Petit Caro Wine 2021 | Bodegas Caro | Aionysus',
+    metaDescription: 'Buy Petit Caro wine 2021 — Malbec-Cabernet blend from Bodegas Caro, Mendoza. Second wine of the Rothschild-Catena venture. Exceptional Argentine red.',
+    bodyKeyword: 'Petit Caro Wine',
+  },
+  // Position 66
+  '2019-chardonnay-estate-vineyard-giaconda': {
+    title: 'Giaconda Chardonnay 2019 | Estate Vineyard | Aionysus',
+    metaDescription: 'Buy Giaconda Chardonnay 2019 — Australia\'s most celebrated Chardonnay from Beechworth. Legendary producer, perfect balance of fruit and oak.',
+    bodyKeyword: 'Giaconda',
+  },
+  // Position 72 - Smith Woodhouse
+  '2007-smith-woodhouse-vintage-port': {
+    title: 'Smith Woodhouse 2007 | Vintage Port | Aionysus',
+    metaDescription: 'Buy Smith Woodhouse 2007 Vintage Port — classic Douro Valley Port from an exceptional vintage. Rich, complex, and drinking superbly now.',
+    bodyKeyword: 'Smith Woodhouse',
+  },
+  // Position 72 - Gevrey-Chambertin
+  '2018-gevrey-chambertin-les-evocelles-domaine-de-la-vougeraie': {
+    title: 'Gevrey Chambertin Les Evocelles 2018 | Vougeraie | Aionysus',
+    metaDescription: 'Buy Gevrey Chambertin Les Evocelles 2018 from Domaine de la Vougeraie — village Burgundy from a prestigious biodynamic estate. Expert tasting notes.',
+    bodyKeyword: 'Gevrey Chambertin Les Evocelles',
+  },
+  // Position 73 - Bâtard-Montrachet
+  '2021-batard-montrachet-grand-cru-marc-antonin-blain': {
+    title: 'Bâtard Montrachet Grand Cru 2021 | Marc-Antonin Blain | Aionysus',
+    metaDescription: 'Buy Bâtard Montrachet Grand Cru 2021 from Marc-Antonin Blain — one of Burgundy\'s greatest white wine vineyards. Exceptional Grand Cru Chardonnay.',
+    bodyKeyword: 'Bâtard Montrachet Grand Cru',
+  },
+  // Position 76 - Gunderloch
+  '2020-estate-dry-riesling-gunderloch': {
+    title: 'Gunderloch Wine 2020 | Estate Dry Riesling | Aionysus',
+    metaDescription: 'Buy Gunderloch wine — 2020 Estate Dry Riesling from Rheinhessen, Germany. Crisp, mineral, and beautifully balanced from a top German producer.',
+    bodyKeyword: 'Gunderloch Wine',
+  },
+  // Position 77 - Ridgeview Rosé
+  'nv-ridgeview-fitzrovia-rose': {
+    title: 'Ridgeview Rosé | Fitzrovia NV | English Sparkling | Aionysus',
+    metaDescription: 'Buy Ridgeview Rosé Fitzrovia NV — award-winning English sparkling rosé from Sussex. Elegant salmon-pink bubbles from a pioneering producer.',
+    bodyKeyword: 'Ridgeview Rosé',
+  },
+  // Position 81 - Brunello
+  '2010-brunello-di-montalcino-le-lucere-san-filippo': {
+    title: 'Brunello San Filippo 2010 | Le Lucere | Aionysus',
+    metaDescription: 'Buy Brunello San Filippo 2010 Le Lucere — outstanding Brunello di Montalcino from a superb vintage. 14 years aged, drinking beautifully now.',
+    bodyKeyword: 'Brunello San Filippo',
+  },
+  // Position 85 - Jim Barry
+  '2001-jim-barry-the-armagh-clare-valley': {
+    title: 'Jim Barry Wine | The Armagh 2001 | Aionysus',
+    metaDescription: 'Buy Jim Barry wine — The Armagh 2001 Shiraz from Clare Valley. Australia\'s most celebrated single-vineyard Shiraz. Legendary producer.',
+    bodyKeyword: 'Jim Barry Wine',
+  },
+  // Position 85 - Pommard
+  '2021-pommard-1er-cru-epenots-antoine-jobard': {
+    title: 'Pommard 1er Cru Epenots 2021 | Antoine Jobard | Aionysus',
+    metaDescription: 'Buy Pommard 1er Cru Epenots 2021 from Antoine Jobard — exceptional Premier Cru Burgundy. Elegant Pinot Noir from one of the best village sites.',
+    bodyKeyword: 'Pommard 1er Cru',
+  },
+  // Position 87 - Contino
+  '2016-contino-rioja-gran-reserva-cvne': {
+    title: 'Contino Wine 2016 | Rioja Gran Reserva | Aionysus',
+    metaDescription: 'Buy Contino wine 2016 Rioja Gran Reserva from CVNE — single-estate Rioja of exceptional quality. Traditional production, modern elegance.',
+    bodyKeyword: 'Contino Wine',
+  },
+  // Position 88 - Anaperenna
+  '2006-anaperenna-shiraz-cabernet-sauvignon-ben-glaetzer': {
+    title: 'Anaperenna Wine 2006 | Ben Glaetzer | Aionysus',
+    metaDescription: 'Buy Anaperenna wine 2006 — Shiraz Cabernet Sauvignon by Ben Glaetzer. Barossa Valley icon aged 20 years, drinking superbly now.',
+    bodyKeyword: 'Anaperenna Wine',
+  },
+  // Ridgeview Bloomsbury
+  'nv-ridgeview-bloomsbury-brut': {
+    title: 'Ridgeview Bloomsbury | English Sparkling Brut | Aionysus',
+    metaDescription: 'Buy Ridgeview Bloomsbury Brut NV — flagship English sparkling wine from Sussex. Classic method, fine bubbles, Champagne quality at English prices.',
+    bodyKeyword: 'Ridgeview Bloomsbury',
+  },
+  'nv-ridgeview-bloomsbury-brut-12x37-5cl': {
+    title: 'Ridgeview Bloomsbury | Half Bottles | Aionysus',
+    metaDescription: 'Buy Ridgeview Bloomsbury Brut NV half bottles (12x37.5cl) — flagship English sparkling wine in perfect single-serve format.',
+    bodyKeyword: 'Ridgeview Bloomsbury',
+  },
+}
+
+export function getWineSEO(slug: string): WineSEO | null {
+  return WINE_SEO_OVERRIDES[slug] || null
 }

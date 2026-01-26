@@ -177,6 +177,61 @@ export default function Home() {
           </motion.div>
         </div>
 
+        {/* Featured Wine of the Month - Boal Borges 1875 */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="max-w-5xl mx-auto mb-16"
+        >
+          <div className="bg-gradient-to-r from-amber-900/30 to-amber-800/20 border border-amber-600/30 rounded-2xl overflow-hidden backdrop-blur-sm">
+            <div className="grid md:grid-cols-2 gap-6 p-6 lg:p-8">
+              <div className="flex flex-col justify-center">
+                <span className="text-amber-400 text-sm font-semibold uppercase tracking-wider mb-2">Featured Wine of the Month</span>
+                <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">Boal Borges 1875</h2>
+                <p className="text-white/70 mb-4 leading-relaxed">
+                  One of the oldest commercially available wines in the world. This rare pre-phylloxera Madeira from H.M. Borges is over 145 years old — a living piece of viticultural history.
+                </p>
+                <ul className="text-white/60 text-sm space-y-2 mb-6">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    Pre-phylloxera vintage from 1875
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    Virtually indestructible — will improve for centuries
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    Expert investment analysis included
+                  </li>
+                </ul>
+                <Link
+                  href="/wines/boal-borges-1875"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-500 transition-colors w-fit"
+                >
+                  Explore Boal Borges 1875
+                  <span className="text-lg">→</span>
+                </Link>
+              </div>
+              <div className="relative aspect-[4/5] md:aspect-auto">
+                <img
+                  src="https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?w=600&q=80"
+                  alt="Boal Borges 1875 - rare pre-phylloxera Madeira wine"
+                  title="Boal Borges 1875 vintage Madeira wine - Featured Wine of the Month"
+                  className="w-full h-full object-cover rounded-xl"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent rounded-xl"></div>
+                <div className="absolute bottom-4 left-4 right-4">
+                  <span className="px-3 py-1 bg-amber-600/90 text-white text-xs font-semibold rounded-full">
+                    Madeira • 1875 • Pre-Phylloxera
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* Wine Grid */}
         <div className="max-w-7xl mx-auto">
           <h2 className="text-2xl font-bold text-white mb-6">

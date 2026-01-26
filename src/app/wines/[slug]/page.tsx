@@ -1,5 +1,6 @@
 import { getWineBySlug, formatPrice, getWineInvestmentData, getSimilarWines, getWinesFromRegion, Wine, getMerchantConfig } from '@/lib/wine-db'
-import { getWineEnrichment, getEnrichedWineLinks } from '@/lib/wine-enrichment'
+import { getWineEnrichment, getEnrichedWineLinks, getWineSEO } from '@/lib/wine-enrichment'
+import { generateAutoSEO, getRegionExternalLinks, getInternalLinks, generateAboutContent } from '@/lib/seo-automation'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -20,11 +21,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: 'Wine Not Found | Aionysus' }
   }
 
+  // Check for full enrichment first, then lightweight SEO overrides, then auto-generate
   const enrichment = getWineEnrichment(slug)
-  const fullName = `${wine.vintage ? `${wine.vintage} ` : ''}${wine.name}`
-  const priceStr = wine.price_retail ? ` | From £${Math.round(wine.price_retail)}` : ''
-  const title = enrichment?.seo?.title || `${fullName} | ${wine.winery}${priceStr} | Aionysus`
-  const description = enrichment?.seo?.metaDescription || `${fullName} from ${wine.winery}, ${wine.region}${wine.country ? `, ${wine.country}` : ''}.${wine.price_retail ? ` From £${Math.round(wine.price_retail)}.` : ''} Expert tasting notes, food pairings${wine.classification ? `, ${wine.classification}` : ''}. Buy ${wine.name} online at Aionysus.`
+  const seoOverride = getWineSEO(slug)
+  const autoSEO = generateAutoSEO(wine)
+
+  // Priority: enrichment.seo > seoOverride > autoSEO
+  const title = enrichment?.seo?.title || seoOverride?.title || autoSEO.title
+  const description = enrichment?.seo?.metaDescription || seoOverride?.metaDescription || autoSEO.metaDescription
 
   return {
     title,
@@ -191,7 +195,7 @@ const REGION_INFO: Record<string, RegionData> = {
     ],
   },
   'Madeira': {
-    description: 'Madeira produces some of the world\'s longest-lived wines, with a unique heated aging process that creates extraordinary complexity.',
+    description: 'Madeira produces some of the world\'s longest-lived wines, with a unique heated aging process that creates extraordinary complexity. The island\'s pre-phylloxera vintages, like the legendary Boal Borges 1875, represent some of the oldest drinkable wines in existence.',
     climate: 'Subtropical maritime climate with warm temperatures year-round.',
     soils: 'Volcanic basalt soils on steep terraced vineyards.',
     grapes: ['Sercial', 'Verdelho', 'Boal', 'Malmsey', 'Tinta Negra'],
@@ -203,7 +207,7 @@ const REGION_INFO: Record<string, RegionData> = {
       { name: 'Blandy\'s Wine Lodge', description: 'Historic lodge tours', link: 'https://www.blandys.com' },
     ],
     bestTimeToVisit: 'Year-round destination',
-    famousProducers: ['Blandy\'s', 'Henriques & Henriques', 'Barbeito', 'd\'Oliveiras'],
+    famousProducers: ['Blandy\'s', 'H.M. Borges', 'Henriques & Henriques', 'Barbeito', 'd\'Oliveiras'],
     externalLinks: [
       { name: 'Visit Madeira', url: 'https://www.visitmadeira.pt' },
       { name: 'Wikipedia: Madeira Wine', url: 'https://en.wikipedia.org/wiki/Madeira_wine' },
@@ -452,11 +456,19 @@ export default async function WineDetailPage({ params }: Props) {
   const similarIds = similarWines.map(w => w.id)
   const regionWines = await getWinesFromRegion(wine.id, wine.region, similarIds, 4)
 
-  // Check for skyscraper enrichment content
+  // Check for skyscraper enrichment content and lightweight SEO overrides
   const enrichment = getWineEnrichment(slug)
+  const seoOverride = getWineSEO(slug)
+  const autoSEO = generateAutoSEO(wine)
 
   // Get enriched wines for internal linking (keyword anchor text)
   const featuredWineLinks = getEnrichedWineLinks(slug)
+
+  // Get auto-generated internal links based on region
+  const autoInternalLinks = getInternalLinks(slug, wine.region, wine.country)
+
+  // Get auto-generated external links based on region
+  const autoExternalLinks = getRegionExternalLinks(wine.region, wine.country)
 
   // Map regions to dedicated region pages for internal linking
   const REGION_PAGE_MAP: Record<string, { slug: string; name: string }> = {
@@ -471,12 +483,17 @@ export default async function WineDetailPage({ params }: Props) {
   const regionPage = Object.entries(REGION_PAGE_MAP).find(([key]) => regionLower.includes(key))?.[1] || null
 
   // Full wine name for SEO (used 6+ times throughout page)
+  // Priority: enrichment.seo > seoOverride > autoSEO
   const fullWineName = `${wine.vintage ? `${wine.vintage} ` : ''}${wine.name}`
-  const seoH1 = enrichment?.seo?.h1 || fullWineName
-  const seoKeyword = enrichment?.seo?.bodyKeyword || fullWineName
-  const seoImageAlt = enrichment?.seo?.imageAlt || `${fullWineName} wine bottle - ${wine.winery} ${wine.region} ${wine.country}`
+  const seoH1 = enrichment?.seo?.h1 || seoOverride?.h1 || autoSEO.h1
+  const seoKeyword = enrichment?.seo?.bodyKeyword || seoOverride?.bodyKeyword || autoSEO.bodyKeyword
+  const seoImageAlt = enrichment?.seo?.imageAlt || autoSEO.imageAlt
+  const seoImageTitle = autoSEO.imageTitle
   const foodPairings = getFoodPairings(wine.wine_type, wine.grape_variety)
   const drinkingWindow = getDrinkingWindow(wine.vintage, wine.wine_type, wine.classification)
+
+  // Generate "About" content for non-enriched wines
+  const aboutContent = !enrichment ? generateAboutContent(wine, seoKeyword) : []
 
   // Structured data values from merchant config
   const productImage = wine.image_url || merchantConfig.placeholder_image_url
@@ -552,6 +569,7 @@ export default async function WineDetailPage({ params }: Props) {
             <img
               src={enrichment.regionImages.hero}
               alt={`${seoKeyword} - ${wine.region}, ${wine.country}`}
+              title={`${seoKeyword} - Boal Borges 1875 Madeira wine from ${wine.region}`}
               className="absolute inset-0 w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
@@ -612,6 +630,7 @@ export default async function WineDetailPage({ params }: Props) {
                   <img
                     src={wine.image_url}
                     alt={seoImageAlt}
+                    title={seoImageTitle}
                     className="w-full h-full object-cover"
                     itemProp="image"
                   />
@@ -719,13 +738,31 @@ export default async function WineDetailPage({ params }: Props) {
             </div>
           </div>
 
+          {/* About This Wine Section - SEO content for non-enriched wines */}
+          {!enrichment && aboutContent.length > 0 && (
+            <section className="mt-14 bg-stone-50 rounded-2xl p-8 border border-stone-200" aria-labelledby="about-heading">
+              <h2 id="about-heading" className="text-2xl font-bold text-stone-900 mb-4">
+                About {seoKeyword}
+              </h2>
+              <div className="prose prose-stone max-w-none">
+                {aboutContent.map((paragraph, idx) => (
+                  <p
+                    key={idx}
+                    className="text-stone-700 leading-relaxed mb-4"
+                    dangerouslySetInnerHTML={{ __html: paragraph }}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Food Pairings Section (H2 with wine name - Mention 3) */}
           <section className="mt-14" aria-labelledby="pairings-heading">
             <h2 id="pairings-heading" className="text-2xl font-bold text-stone-900 mb-3">
               Food Pairings for {seoKeyword}
             </h2>
             <p className="text-stone-700 mb-8 text-lg leading-loose">
-              {seoKeyword} pairs beautifully with a variety of dishes. Here are our recommended pairings:
+              {seoKeyword} pairs beautifully with a variety of dishes. Here are our recommended pairings for {seoKeyword}:
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {foodPairings.slice(0, 8).map((pairing, i) => {
@@ -744,6 +781,7 @@ export default async function WineDetailPage({ params }: Props) {
                     <img
                       src={foodImages[i % foodImages.length]}
                       alt={`${pairing} paired with ${seoKeyword}`}
+                      title={`${seoKeyword} food pairing - ${pairing}`}
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       loading="lazy"
                     />
@@ -761,7 +799,7 @@ export default async function WineDetailPage({ params }: Props) {
           {investmentData && (
             <section className="mt-14" aria-labelledby="investment-heading">
               <h2 id="investment-heading" className="text-2xl font-bold text-stone-900 mb-6">
-                Investment Profile: {seoKeyword}
+                {seoKeyword}
               </h2>
               <InvestmentCharts
                 prices={[
@@ -790,6 +828,7 @@ export default async function WineDetailPage({ params }: Props) {
                 <img
                   src="https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=1200&q=80"
                   alt={`Wine tasting notes for ${seoKeyword}`}
+                  title={`${seoKeyword} tasting notes - Boal Borges 1875 Madeira`}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/40 to-black/60" />
@@ -842,12 +881,13 @@ export default async function WineDetailPage({ params }: Props) {
                   <img
                     src={enrichment.heroImage}
                     alt={enrichment.heroAlt}
+                    title={`Why ${seoKeyword} is special - Boal Borges 1875 vintage Madeira wine`}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
                   <div className="relative py-14 px-8 md:px-12 max-w-2xl">
                     <h2 id="special-heading" className="text-3xl font-light text-white tracking-tight mb-8">
-                      Why {seoKeyword} Is Special
+                      Why This Vintage Is Special
                     </h2>
                     <ul className="space-y-4">
                       {enrichment.whySpecial.map((point, i) => (
@@ -867,6 +907,7 @@ export default async function WineDetailPage({ params }: Props) {
                   <img
                     src={enrichment.producerProfile.image}
                     alt={enrichment.producerProfile.imageAlt}
+                    title={`${enrichment.producerProfile.name} - producer of ${seoKeyword}`}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/35 to-black/10" />
@@ -894,6 +935,7 @@ export default async function WineDetailPage({ params }: Props) {
                   <img
                     src="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1200&q=80"
                     alt={`Vineyard harvest - vintage analysis for ${seoKeyword}`}
+                    title={`${seoKeyword} vintage analysis - 1875 Boal Borges Madeira`}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/40 to-black/20" />
@@ -924,6 +966,7 @@ export default async function WineDetailPage({ params }: Props) {
                     <img
                       src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1200&q=80"
                       alt={`Wine tasting - critical acclaim for ${seoKeyword}`}
+                      title={`${seoKeyword} critical reviews - Boal Borges 1875 scores`}
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/50" />
@@ -982,12 +1025,13 @@ export default async function WineDetailPage({ params }: Props) {
                   <img
                     src="https://images.unsplash.com/photo-1504279577054-acfeccf8fc52?w=1200&q=80"
                     alt={`Wine cellar - cellaring guide for ${seoKeyword}`}
+                    title={`Cellaring ${seoKeyword} - storage tips for Boal Borges 1875`}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/40 to-black/20" />
                   <div className="relative py-12 px-8 md:px-12">
                     <h2 id="cellar-heading" className="text-3xl font-light text-white tracking-tight mb-2">
-                      Cellaring {seoKeyword}
+                      Cellaring This Vintage
                     </h2>
                     <h3 className="text-sm uppercase tracking-widest text-white/60 mb-8 font-semibold">Storage Recommendations &amp; Drinking Window</h3>
                     <div className="grid md:grid-cols-2 gap-8">
@@ -1020,9 +1064,9 @@ export default async function WineDetailPage({ params }: Props) {
               {/* Enhanced Food Pairings - Image Strip */}
               <section className="mt-16" aria-labelledby="enhanced-pairings-heading">
                 <h2 id="enhanced-pairings-heading" className="text-2xl font-bold text-stone-900 mb-3">
-                  Expert Food Pairings for {seoKeyword}
+                  Expert Sommelier Food Pairings
                 </h2>
-                <p className="text-stone-600 mb-6">Curated pairings recommended by our sommelier team.</p>
+                <p className="text-stone-600 mb-6">Curated pairings recommended by our sommelier team for {seoKeyword}.</p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {enrichment.additionalFoodPairings.slice(0, 8).map((pairing, i) => {
                     const expertFoodImages = [
@@ -1059,12 +1103,13 @@ export default async function WineDetailPage({ params }: Props) {
                   <img
                     src="https://images.unsplash.com/photo-1516594915307-8f71463e904b?w=1200&q=80"
                     alt={`Wine collection - collector's notes for ${seoKeyword}`}
+                    title={`${seoKeyword} collector's notes - Boal Borges 1875 provenance`}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/40 to-black/20" />
                   <div className="relative py-12 px-8 md:px-12 max-w-3xl">
                     <h2 id="collectors-heading" className="text-3xl font-light text-white tracking-tight mb-2">
-                      Collector&apos;s Notes: {seoKeyword}
+                      Collector&apos;s Notes
                     </h2>
                     <h3 className="text-sm uppercase tracking-widest text-white/60 mb-6 font-semibold">Provenance, Authentication &amp; Value</h3>
                     <div className="space-y-5">
@@ -1081,6 +1126,46 @@ export default async function WineDetailPage({ params }: Props) {
                   </div>
                 </div>
               </section>
+
+              {/* FAQ Section for SEO */}
+              {enrichment.faq && enrichment.faq.length > 0 && (
+                <section className="mt-14" aria-labelledby="faq-heading">
+                  <h2 id="faq-heading" className="text-2xl font-bold text-stone-900 mb-6">
+                    Frequently Asked Questions About {seoKeyword}
+                  </h2>
+                  <div className="space-y-4">
+                    {enrichment.faq.map((item, i) => (
+                      <details key={i} className="group bg-stone-50 border border-stone-200 rounded-xl overflow-hidden">
+                        <summary className="flex items-center justify-between cursor-pointer p-5 font-semibold text-stone-900 hover:bg-stone-100 transition-colors">
+                          <span>{item.question}</span>
+                          <span className="ml-4 text-stone-400 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div className="px-5 pb-5 text-stone-700 leading-relaxed">
+                          {item.answer}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                  {/* FAQ Schema.org structured data */}
+                  <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                      __html: JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'FAQPage',
+                        mainEntity: enrichment.faq.map((item) => ({
+                          '@type': 'Question',
+                          name: item.question,
+                          acceptedAnswer: {
+                            '@type': 'Answer',
+                            text: item.answer,
+                          },
+                        })),
+                      }),
+                    }}
+                  />
+                </section>
+              )}
 
               {/* External Authority Links */}
               {enrichment.externalLinks.length > 0 && (
@@ -1147,6 +1232,62 @@ export default async function WineDetailPage({ params }: Props) {
           {/* Region Information (H2 with wine name - Mention 6) */}
           {wine.region && (
             <RegionSection region={wine.region} wineName={fullWineName} />
+          )}
+
+          {/* Auto-generated External Links for non-enriched wines */}
+          {!enrichment && autoExternalLinks.length > 0 && (
+            <section className="mt-14 bg-stone-50 rounded-2xl p-8 border border-stone-200" aria-labelledby="auto-resources-heading">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 bg-burgundy-100 rounded-lg flex items-center justify-center">
+                  <span className="text-burgundy-700 text-sm font-bold">+</span>
+                </div>
+                <h2 id="auto-resources-heading" className="text-xl font-semibold text-stone-900">
+                  Learn More About {wine.region} Wines
+                </h2>
+              </div>
+              <p className="text-stone-600 mb-6">
+                Explore authoritative resources about {wine.region} and {seoKeyword}:
+              </p>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {autoExternalLinks.map((link, idx) => (
+                  <a
+                    key={idx}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 p-3 bg-white border border-stone-200 rounded-lg hover:border-burgundy-400 hover:shadow-sm transition-all group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-stone-900 text-sm group-hover:text-burgundy-700 transition-colors">
+                        {link.name}
+                      </h4>
+                      <p className="text-xs text-stone-500 mt-1 line-clamp-2">{link.description}</p>
+                    </div>
+                    <span className="text-stone-400 group-hover:text-burgundy-600 transition-colors">↗</span>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Auto-generated Internal Links for non-enriched wines */}
+          {!enrichment && autoInternalLinks.length > 0 && (
+            <section className="mt-10" aria-labelledby="auto-internal-heading">
+              <h3 id="auto-internal-heading" className="text-lg font-semibold text-stone-900 mb-4">
+                You Might Also Like
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                {autoInternalLinks.map((link) => (
+                  <Link
+                    key={link.slug}
+                    href={`/wines/${link.slug}`}
+                    className="px-4 py-2 bg-burgundy-50 border border-burgundy-200 rounded-lg text-burgundy-700 hover:bg-burgundy-100 hover:border-burgundy-400 transition-colors text-sm font-medium"
+                  >
+                    {link.keyword}
+                  </Link>
+                ))}
+              </div>
+            </section>
           )}
 
           {/* Similar Wines */}

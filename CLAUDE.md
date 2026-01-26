@@ -112,7 +112,7 @@ Wine e-commerce and investment platform with AI sommelier (Vic). CopilotKit chat
 DATABASE_URL=postgresql://neondb_owner:npg_IERTg3leh5nD@ep-restless-wildflower-abjlgti1-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require
 
 # Google Gemini (LLM)
-GOOGLE_API_KEY=AIzaSyDk_v8sPKmYlukWdsncrosnt6XH5vqD2e4
+GOOGLE_API_KEY=<from .env.local - DO NOT commit to repo>
 
 # Agent URL (Railway)
 NEXT_PUBLIC_AGENT_URL=https://dionysus-production.up.railway.app
@@ -186,11 +186,57 @@ CREATE TABLE wine_price_variants (
 
 ---
 
-## Current Status (Jan 22, 2026)
+## SEO Best Practices for Wine Pages
+
+All wine detail pages must follow these SEO guidelines for optimal search ranking:
+
+### Target Keyword Placement
+1. **Title tag**: Keyword at start, under 60 characters
+2. **Meta description**: Keyword included, 140-160 characters (not longer!)
+3. **H1 heading**: Keyword included (only one H1 per page)
+4. **H2 headings**: Keyword in 2-3 H2s, vary phrasing to avoid stuffing
+5. **Body content**: Keyword appears 4-8+ times, **bolded once** early in content
+6. **URL slug**: Keyword included (already handled)
+
+### Image SEO
+- **Alt text**: Include full keyword + descriptive context
+- **Title attribute**: Include keyword + additional context
+- **File names/URLs**: Include keyword where possible
+
+### Content Requirements
+- **Word count**: Minimum 500+ words per page (ideally 1000+)
+- **Keyword density**: ~1-2% (avoid stuffing - space out mentions)
+- **Structured data**: JSON-LD Product schema, FAQPage schema for FAQs
+
+### Internal & External Links
+- Link to target page from homepage (Featured Wine section)
+- Link from wines listing page with keyword anchor text
+- Add 10+ high-authority external links (Wikipedia, BBC, official tourism, major merchants)
+- Internal links from region pages using keyword anchor text
+
+### Files for SEO
+| Purpose | Location |
+|---------|----------|
+| Full enrichments | `src/lib/wine-enrichment.ts` (WINE_ENRICHMENTS) |
+| Lightweight SEO | `src/lib/wine-enrichment.ts` (WINE_SEO_OVERRIDES) |
+| Metadata generation | `src/app/wines/[slug]/page.tsx` (generateMetadata) |
+| Homepage featured | `src/app/page.tsx` (Featured Wine of the Month) |
+
+---
+
+## Current Status (Jan 26, 2026)
 
 ### Completed
 - [x] Light theme for wine detail pages (Wine Society style)
-- [x] SEO: H1-H6 hierarchy, wine name 4-6 times, bolded once
+- [x] SEO: H1-H6 hierarchy, wine name 4-8 times, bolded once
+- [x] SEO: Image title attributes with keywords
+- [x] SEO: Meta descriptions under 160 characters
+- [x] SEO: Lightweight SEO overrides for GSC keywords
+- [x] SEO: About section for non-enriched wines (word count boost)
+- [x] SEO: FAQ section with schema.org markup
+- [x] SEO: 20 high-authority external links per enriched page
+- [x] Homepage Featured Wine of the Month section
+- [x] Wines listing page Rare & Historic section
 - [x] CopilotKit Sidebar on ALL pages (GlobalVicSidebar)
 - [x] Site-wide frontend tools (GlobalCopilotActions)
 - [x] Migrated to `useFrontendTool` per CopilotKit best practices

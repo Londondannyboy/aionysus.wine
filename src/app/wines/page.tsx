@@ -40,6 +40,26 @@ export default function WinesPage() {
           <p className="text-slate-400">Browse our selection of 3,900+ fine wines</p>
         </div>
 
+        {/* Featured: Rare & Historic Wines */}
+        <div className="mb-10 p-6 bg-gradient-to-r from-amber-900/30 to-amber-800/20 border border-amber-600/30 rounded-2xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <span className="text-amber-400 text-xs font-semibold uppercase tracking-wider">Collector&apos;s Corner</span>
+              <h2 className="text-xl font-bold text-white mt-1">Rare & Historic Wines</h2>
+              <p className="text-white/60 text-sm mt-1">
+                Discover extraordinary bottles including <Link href="/wines/boal-borges-1875" className="text-amber-400 hover:text-amber-300 font-semibold underline underline-offset-2">Boal Borges 1875</Link> — one of the oldest wines in the world.
+              </p>
+            </div>
+            <Link
+              href="/wines/boal-borges-1875"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-500 transition-colors whitespace-nowrap"
+            >
+              Explore Boal Borges 1875
+              <span>→</span>
+            </Link>
+          </div>
+        </div>
+
         {/* Search & Filters */}
         <div className="flex flex-wrap gap-4 mb-8">
           <input
@@ -58,6 +78,7 @@ export default function WinesPage() {
             <option value="Burgundy">Burgundy</option>
             <option value="Bordeaux">Bordeaux</option>
             <option value="Champagne">Champagne</option>
+            <option value="Madeira">Madeira</option>
             <option value="Rhone">Rhone</option>
             <option value="Italy">Italy</option>
             <option value="Barolo">Barolo</option>
