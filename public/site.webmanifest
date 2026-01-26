@@ -1,5 +1,5 @@
 {
-  "name": "Aionysus Quest",
+  "name": "Aionysus Wine",
   "short_name": "Aionysus",
   "icons": [
     {
@@ -15,7 +15,9 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#059669",
+  "theme_color": "#722F37",
   "background_color": "#ffffff",
-  "display": "standalone"
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
 }
